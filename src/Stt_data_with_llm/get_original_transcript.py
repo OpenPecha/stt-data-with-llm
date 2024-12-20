@@ -1,9 +1,10 @@
 def say_hi(name):
-    if name.startswith("J"):
+    if name.endswith("J"):
         return "Hello, J!"
     else:
         print("NOthin")
 
 
 if __name__ == "__main__":
-    say_hi("Jimpa")
+    p = say_hi("impaJ")
+    print(p)
