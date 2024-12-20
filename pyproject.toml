@@ -17,6 +17,11 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+dependencies = [
+    "git+https://github.com/OpenPecha/fast-antx.git",
+]
+
+
 [project.optional-dependencies]
 dev = [
     "pre-commit",
