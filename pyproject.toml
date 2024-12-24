@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "Stt_data_with_llm"
+name = "stt_data_with_llm"
 version = "0.0.1"
 authors = [
   { name="OpenPecha", email="dev@openpecha.org" },
@@ -17,13 +17,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-dependencies = [
-    "git+https://github.com/OpenPecha/fast-antx.git",
-]
-
-
 [project.optional-dependencies]
 dev = [
+    "pytest",
+    "pytest-cov",
     "pre-commit",
 ]
 

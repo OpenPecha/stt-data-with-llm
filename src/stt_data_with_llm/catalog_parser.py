@@ -1,38 +1,73 @@
-import json
 import logging
 
-import requests
+import pandas as pd
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 
-def parse_catalog(catalog_url):
-    """Reads a catalog from a URL and parses the catalog.
+def read_spreadsheet(sheet_id):
+    """
+    Reads a Google Spreadsheet as a Pandas DataFrame without mixing rows and headers.
 
     Args:
-        catalog_url (str): The URL of the catalog.
+        sheet_id (str): The ID of the Google Spreadsheet.
 
     Returns:
-        dict: A dictionary of dictionaries containing the parsed catalog data.
+        pd.DataFrame: A cleaned DataFrame with rows and headers properly separated.
     """
+    url = (
+        f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv"  # noqa
+    )
     try:
-        response = requests.get(catalog_url)
-        catalog_data = response.json()
-        parsed_items = {}
-        for catalog_item in catalog_data:
-            parsed_item = {
-                "sr_no": catalog_item.get("Sr.no"),
-                "id": catalog_item.get("ID"),
-                "audio_url": catalog_item.get("Audio URL"),
-                "audio_text": catalog_item.get("Audio Text"),
-                "speaker_name": catalog_item.get("Speaker Name"),
-                "news_channel": catalog_item.get("News Channel"),
-                "publishing_year": catalog_item.get("Publishing Year"),
-            }
-            parsed_items[catalog_item.get("ID")] = parsed_item
+        # Read the CSV data from the Google Spreadsheet
+        df = pd.read_csv(url, header=0)
+        print(df.head())
+        # Log basic information about the DataFrame
+        logging.info("Spreadsheet successfully read.")
+        logging.info(f"Headers: {df.columns.tolist()}")
+        logging.info(f"First few rows:\n{df.head()}")  # noqa
 
-        return parsed_items
-    except requests.RequestException as e:
-        logging.error(f"Error fetching Catalog: {e}")
+        return df
+    except Exception as e:
+        logging.error(f"Error reading spreadsheet: {e}")
+        return pd.DataFrame()
+
+
+def catalog_parser(audio_url):
+    """
+    Parses an audio transcription catalog from a Google Spreadsheet.
+
+    Args:
+        audio_url (str): The URL of the Google Spreadsheet containing the audio transcription catalog.
+
+    Returns:
+        dict: A dictionary where keys are unique IDs (e.g., "full_audio_id") and values are dictionaries of audio data.
+    """
+    catalog_df = read_spreadsheet(audio_url)
+
+    # Check if the catalog DataFrame is empty
+    if catalog_df.empty:
+        logging.warning("Catalog DataFrame is empty.")
         return {}
-    except json.JSONDecodeError as e:
-        logging.error(f"Error parsing Catalog JSON: {e}")
-        return {}
+
+    audio_transcription_datas = {}
+    for _, row in catalog_df.iterrows():
+        try:
+            full_audio_id = row.get("ID", "")
+            if not full_audio_id:
+                logging.warning(f"Row missing 'ID': {row}")
+                continue
+
+            audio_transcription_datas[full_audio_id] = {
+                "full_audio_id": full_audio_id,
+                "sr_no": row.get("Sr. no", ""),
+                "audio_url": row.get("Audio LInk", ""),
+                "reference_transcript": row.get("Audio text link", ""),
+                "speaker_id": row.get("Speaker ID", ""),
+            }
+        except Exception as e:
+            logging.error(f"Error processing row: {row}. Error: {e}")
+
+    logging.info(f"Parsed {len(audio_transcription_datas)} entries from the catalog.")
+    return audio_transcription_datas
