@@ -14,7 +14,7 @@ def setup_logging():
 
     # Create a file handler for a rotating log file
     file_handler = RotatingFileHandler(
-        "./tests/data/log_folder/catalog_parser.log",
+        "catalog_parser.log",
         maxBytes=1024 * 1024,
         backupCount=5,
     )
