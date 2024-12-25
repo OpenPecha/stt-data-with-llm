@@ -11,7 +11,7 @@ def test_catalog_parser():
     Main function to parse the catalog and save the audio transcription data as JSON.
     """
     # Replace with your actual spreadsheet ID
-    google_spread_sheet_id = "1TXTmFTSbCuEy6nzZj--jjprFmZkpJZVz8gkMYrBcPUU"
+    google_spread_sheet_id = "1nE2AVpOr6dIF8iZlPhOfJRMCSI25fYHswxdNIAYuZ7M"
 
     # Parse the catalog
 
@@ -24,7 +24,7 @@ def test_catalog_parser():
         actual_output_dir + "/actual_audio_transcription_data.json"
     )
     expected_output_json_path = (
-        "tests/data/expected_output/audio_transcription_data.json"
+        "tests/data/expected_output/expected_audio_transcription_data.json"
     )
     with open(actual_output_json_path, "w", encoding="utf-8") as jsonfile:
         json.dump(audio_transcription_datas, jsonfile, ensure_ascii=False, indent=4)

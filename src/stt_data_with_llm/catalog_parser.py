@@ -1,9 +1,34 @@
 import logging
+from logging.handlers import RotatingFileHandler
 
 import pandas as pd
 
+
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+def setup_logging():
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    # Create a formatter
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+
+    # Create a file handler for a rotating log file
+    file_handler = RotatingFileHandler(
+        "./tests/data/log_folder/catalog_parser.log",
+        maxBytes=1024 * 1024,
+        backupCount=5,
+    )
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # Create a console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+
+# Call the setup_logging function at the beginning of your script
+setup_logging()
 
 
 def read_spreadsheet(sheet_id):
@@ -26,7 +51,7 @@ def read_spreadsheet(sheet_id):
         # Log basic information about the DataFrame
         logging.info("Spreadsheet successfully read.")
         logging.info(f"Headers: {df.columns.tolist()}")
-        logging.info(f"First few rows:\n{df.head()}")  # noqa
+        logging.info(f"First few rows:\n{df.head().to_string()}")  # noqa: E231
 
         return df
     except Exception as e:
@@ -56,18 +81,21 @@ def catalog_parser(audio_url):
         try:
             full_audio_id = row.get("ID", "")
             if not full_audio_id:
-                logging.warning(f"Row missing 'ID': {row}")
+                logging.warning(f"Row missing 'ID': {row.to_dict()}")
                 continue
 
             audio_transcription_datas[full_audio_id] = {
                 "full_audio_id": full_audio_id,
-                "sr_no": row.get("Sr. no", ""),
-                "audio_url": row.get("Audio LInk", ""),
-                "reference_transcript": row.get("Audio text link", ""),
-                "speaker_id": row.get("Speaker ID", ""),
+                "sr_no": row.get("Sr.no", ""),
+                "audio_url": row.get("Audio URL", ""),
+                "reference_transcript": row.get("Audio Text", ""),
+                "speaker_name": row.get("Speaker Name", ""),
+                "speaker_gender": row.get("Speaker Gender", ""),
+                "news_channel": row.get("News Channel", ""),
+                "publishing_year": row.get("Publishing Year", ""),
             }
         except Exception as e:
-            logging.error(f"Error processing row: {row}. Error: {e}")
+            logging.error(f"Error processing row: {row.to_dict()}. Error: {e}")
 
     logging.info(f"Parsed {len(audio_transcription_datas)} entries from the catalog.")
     return audio_transcription_datas

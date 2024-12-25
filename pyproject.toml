@@ -17,7 +17,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-  "pandas<=2.2.3"
+  "git+https://github.com/OpenPecha/fast-antx.git",
+  "pandas<2.2.3"
 ]
 
 [project.optional-dependencies]
