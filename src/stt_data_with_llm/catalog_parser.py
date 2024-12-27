@@ -88,7 +88,4 @@ def catalog_parser(google_sheet_id):
             logging.error(f"Error processing row: {row.to_dict()}. Error: {e}")
 
     logging.info(f"Parsed {len(audio_transcription_datas)} entries from the catalog.")
-    print("Data start")
-    print(audio_transcription_datas)
-    print("Data end")
     return audio_transcription_datas
