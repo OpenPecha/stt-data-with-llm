@@ -23,7 +23,7 @@ def read_spreadsheet(sheet_id):
     )
     try:
         # Read the CSV data from the Google Spreadsheet
-        df = pd.read_csv(url, header=0)
+        df = pd.read_csv(url, header=0, encoding="utf-8")
         # Log basic information about the DataFrame
         logging.info("Spreadsheet successfully read.")
         logging.info(f"Headers: {df.columns.tolist()}")
@@ -34,7 +34,7 @@ def read_spreadsheet(sheet_id):
         return pd.DataFrame()
 
 
-def catalog_parser(audio_url):
+def catalog_parser(google_sheet_id):
     """
     Parses an audio transcription catalog from a Google Spreadsheet.
 
@@ -44,7 +44,7 @@ def catalog_parser(audio_url):
     Returns:
         dict: A dictionary where keys are unique IDs (e.g., "full_audio_id") and values are dictionaries of audio data.
     """
-    catalog_df = read_spreadsheet(audio_url)
+    catalog_df = read_spreadsheet(google_sheet_id)
 
     # Check if the catalog DataFrame is empty
     if catalog_df.empty:
@@ -52,26 +52,43 @@ def catalog_parser(audio_url):
         return {}
 
     audio_transcription_datas = {}
-    for _, row in catalog_df.iterrows():
+
+    for index, row in catalog_df.iterrows():
         try:
             full_audio_id = row.get("ID", "")
             if not full_audio_id:
                 logging.warning(f"Row missing 'ID': {row.to_dict()}")
-                continue
 
-            audio_transcription_datas[full_audio_id] = {
-                "full_audio_id": full_audio_id,
-                "sr_no": row.get("Sr.no", ""),
-                "audio_url": row.get("Audio URL", ""),
-                "reference_transcript": row.get("Audio Text", ""),
-                "speaker_name": row.get("Speaker Name", ""),
-                "speaker_gender": row.get("Speaker Gender", ""),
-                "news_channel": row.get("News Channel", ""),
-                "publishing_year": row.get("Publishing Year", ""),
+            audio_transcription_datas[str(index)] = {
+                "full_audio_id": full_audio_id if not pd.isna(full_audio_id) else "",
+                "sr_no": row.get("Sr.no", "")
+                if not pd.isna(row.get("Sr.no", ""))
+                else "",
+                "audio_url": row.get("Audio URL", "")
+                if not pd.isna(row.get("Audio URL", ""))
+                else "",
+                "reference_transcript": row.get("Audio Text", "")
+                if not pd.isna(row.get("Audio Text", ""))
+                else "",
+                "speaker_name": row.get("Speaker Name", "")
+                if not pd.isna(row.get("Speaker Name", ""))
+                else "",
+                "speaker_gender": row.get("Speaker Gender", "")
+                if not pd.isna(row.get("Speaker Gender", ""))
+                else "",
+                "news_channel": row.get("News Channel", "")
+                if not pd.isna(row.get("News Channel", ""))
+                else "",
+                "publishing_year": row.get("Publishing Year", "")
+                if not pd.isna(row.get("Publishing Year", ""))
+                else "",
             }
-            logging.info(f"print full audio id: %s" % full_audio_id)  # noqa: F541
+
         except Exception as e:
             logging.error(f"Error processing row: {row.to_dict()}. Error: {e}")
 
     logging.info(f"Parsed {len(audio_transcription_datas)} entries from the catalog.")
+    print("Data start")
+    print(audio_transcription_datas)
+    print("Data end")
     return audio_transcription_datas
