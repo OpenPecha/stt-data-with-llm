@@ -1,0 +1,32 @@
+{
+    "0":{
+            "full_audio_id": "STT_NW0802",
+            "sr_no": 1,
+            "audio_url": "https://www.rfa.org/tibetan/sargyur/golok-china-religious-restriction-08202024054225.html/@@stream",
+            "reference_transcript": "A",
+            "speaker_name": "བདེ་སྐྱིད་ཀུན་སྒྲོལ།",
+            "speaker_gender": "",
+            "news_channel": "RFA",
+            "publishing_year": "2024.08.20"
+    },
+    "1":{
+        "full_audio_id": "STT_NW0805",
+        "sr_no": 2,
+        "audio_url": "https://www.rfa.org/tibetan/sargyur/vpn-china-restriction-08152024081404.html/@@stream",
+        "reference_transcript": "B",
+        "speaker_name": "བདེ་སྐྱིད་ཀུན་སྒྲོལ།",
+        "speaker_gender": "",
+        "news_channel": "RFA",
+        "publishing_year": "2024.08.15"
+    },
+    "2":{
+    "full_audio_id": "",
+    "sr_no": 3,
+    "audio_url": "",
+    "reference_transcript": "D",
+    "speaker_name": "",
+    "speaker_gender": "",
+    "news_channel": "RFA",
+    "publishing_year": "2021.01.28"
+}
+}

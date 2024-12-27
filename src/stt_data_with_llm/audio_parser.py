@@ -154,12 +154,15 @@ def get_split_audio(
     Returns:
         dict: Mapping of segment IDs to raw audio data
     """
+
     logging.info(f"Splitting audio for {full_audio_id}")
     split_audio = {}
     temp_audio_file = "temp_audio_in_memory.wav"
     with open(temp_audio_file, "wb") as f:
         f.write(audio_data)
+
     output_folder = f"data/split_audio/{full_audio_id}"
+
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -258,7 +261,6 @@ def get_split_audio(
                                 + chop_length * (j + 1)
                             ),
                         )
-                        logging.info(f"Processed segment {counter} for {full_audio_id}")
                         counter += 1
 
     os.remove(temp_audio_file)
@@ -266,13 +268,3 @@ def get_split_audio(
         f"Finished splitting audio for {full_audio_id}. Total segments: {len(split_audio)}"
     )
     return split_audio
-
-
-if __name__ == "__main__":
-    audio_data = get_audio(
-        "https://www.rfa.org/tibetan/sargyur/golok-china-religious-restriction-08202024054225.html/@@stream"
-    )
-    split_audio_data = get_split_audio(
-        audio_data, "Audio_001", AUDIO_SEG_LOWER_LIMIT, AUDIO_SEG_UPPER_LIMIT
-    )
-    print(split_audio_data)
