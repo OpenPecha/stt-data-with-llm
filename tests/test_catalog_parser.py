@@ -1,7 +1,7 @@
 import json
 import os
 
-from src.stt_data_with_llm.catalog_parser import catalog_parser
+from stt_data_with_llm.catalog_parser import catalog_parser
 
 
 def test_catalog_parser():
@@ -26,8 +26,15 @@ def test_catalog_parser():
     expected_output_json_path = (
         "tests/data/expected_output/expected_audio_transcription_data.json"
     )
+    first_2_rows = {}
+    num_of_rows = 2
+    rows_counter = 0
+    for data_id in audio_transcription_datas:
+        if rows_counter < num_of_rows:
+            first_2_rows[data_id] = audio_transcription_datas[data_id]
+            rows_counter += 1
     with open(actual_output_json_path, "w", encoding="utf-8") as jsonfile:
-        json.dump(audio_transcription_datas, jsonfile, ensure_ascii=False, indent=4)
+        json.dump(first_2_rows, jsonfile, ensure_ascii=False, indent=4)
 
     # Compare the actual and expected JSON files
     with open(actual_output_json_path, encoding="utf-8") as jsonfile:

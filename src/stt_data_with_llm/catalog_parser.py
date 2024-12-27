@@ -1,34 +1,11 @@
 import logging
-from logging.handlers import RotatingFileHandler
 
 import pandas as pd
 
-
-# Configure logging
-def setup_logging():
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-
-    # Create a formatter
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-
-    # Create a file handler for a rotating log file
-    file_handler = RotatingFileHandler(
-        "catalog_parser.log",
-        maxBytes=1024 * 1024,
-        backupCount=5,
-    )
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-
-    # Create a console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
+from stt_data_with_llm.util import setup_logging
 
 # Call the setup_logging function at the beginning of your script
-setup_logging()
+setup_logging("catalog_parse.log")
 
 
 def read_spreadsheet(sheet_id):
@@ -47,11 +24,9 @@ def read_spreadsheet(sheet_id):
     try:
         # Read the CSV data from the Google Spreadsheet
         df = pd.read_csv(url, header=0)
-        print(df.head())
         # Log basic information about the DataFrame
         logging.info("Spreadsheet successfully read.")
         logging.info(f"Headers: {df.columns.tolist()}")
-        logging.info(f"First few rows:\n{df.head().to_string()}")  # noqa: E231
 
         return df
     except Exception as e:
@@ -94,6 +69,7 @@ def catalog_parser(audio_url):
                 "news_channel": row.get("News Channel", ""),
                 "publishing_year": row.get("Publishing Year", ""),
             }
+            logging.info(f"print full audio id: %s" % full_audio_id)  # noqa: F541
         except Exception as e:
             logging.error(f"Error processing row: {row.to_dict()}. Error: {e}")
 
