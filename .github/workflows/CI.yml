@@ -35,19 +35,8 @@ jobs:
     - name: Verify FFmpeg installation
       run: ffmpeg -version
 
-    - name: Set environment variables
-      env:
-        USE_AUTH_TOKEN: ${{ secrets.HF_AUTH_TOKEN }}
-      run: |
-        echo "USE_AUTH_TOKEN=${{ secrets.HF_AUTH_TOKEN }}" >> $GITHUB_ENV
-        echo "Hugging Face token set."
-
     - name: Test with pytest
-      env:
-        USE_AUTH_TOKEN: ${{ env.USE_AUTH_TOKEN }}
       run: PYTHONPATH=src pytest
 
     - name: Test Coverage
-      env:
-        USE_AUTH_TOKEN: ${{ env.USE_AUTH_TOKEN }}
       run: PYTHONPATH=src pytest --cov stt_data_with_llm
