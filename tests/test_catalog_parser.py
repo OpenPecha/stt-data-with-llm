@@ -14,12 +14,12 @@ def test_catalog_parser():
 
     # Parse the catalog
 
-    audio_transcription_datas = catalog_parser(google_spread_sheet_id)
+    audio_transcription_catalog = catalog_parser(google_spread_sheet_id)
     expected_output_json_path = "tests/data/expected_catalog_data.json"
     with open(expected_output_json_path, encoding="utf-8") as file:
         expected_output_json = json.load(file)
 
-    assert audio_transcription_datas == expected_output_json
+    assert audio_transcription_catalog == expected_output_json
 
 
 if __name__ == "__main__":

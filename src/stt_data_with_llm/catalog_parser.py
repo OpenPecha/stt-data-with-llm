@@ -51,7 +51,7 @@ def catalog_parser(google_sheet_id):
         logging.warning("Catalog DataFrame is empty.")
         return {}
 
-    audio_transcription_datas = {}
+    audio_transcription_catalog = {}
 
     for index, row in catalog_df.iterrows():
         try:
@@ -59,7 +59,7 @@ def catalog_parser(google_sheet_id):
             if not full_audio_id:
                 logging.warning(f"Row missing 'ID': {row.to_dict()}")
 
-            audio_transcription_datas[str(index)] = {
+            audio_transcription_catalog[str(index)] = {
                 "full_audio_id": full_audio_id if not pd.isna(full_audio_id) else "",
                 "sr_no": row.get("Sr.no", "")
                 if not pd.isna(row.get("Sr.no", ""))
@@ -87,5 +87,5 @@ def catalog_parser(google_sheet_id):
         except Exception as e:
             logging.error(f"Error processing row: {row.to_dict()}. Error: {e}")
 
-    logging.info(f"Parsed {len(audio_transcription_datas)} entries from the catalog.")
-    return audio_transcription_datas
+    logging.info(f"Parsed {len(audio_transcription_catalog)} entries from the catalog.")
+    return audio_transcription_catalog

@@ -28,6 +28,13 @@ jobs:
         pip install .
         pip install .[dev]
 
+    - name: Install FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+    - name: Verify FFmpeg installation
+      run: ffmpeg -version
+
     - name: Test with pytest
       run: PYTHONPATH=src pytest
 
