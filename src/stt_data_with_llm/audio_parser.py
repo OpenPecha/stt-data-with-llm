@@ -14,6 +14,7 @@ from stt_data_with_llm.config import (
     AUDIO_SEG_UPPER_LIMIT,
     HEADERS,
     HYPER_PARAMETERS,
+    USE_AUTH_TOKEN,
 )
 from stt_data_with_llm.util import setup_logging
 
@@ -21,7 +22,7 @@ from stt_data_with_llm.util import setup_logging
 load_dotenv()
 
 # Access the variable from os.environ
-USE_AUTH_TOKEN = os.getenv("use_auth_token")
+USE_AUTH_TOKEN = os.getenv(USE_AUTH_TOKEN)
 
 # Call the setup_logging function at the beginning of your script
 setup_logging("audio_parser.log")
