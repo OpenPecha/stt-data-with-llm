@@ -17,6 +17,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+  "python-dotenv<=1.0.1",
   "librosa<=0.10.2.post1",
   "torchaudio<=2.5.1",
   "pyannote.audio<=3.3.2",
