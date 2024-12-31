@@ -5,7 +5,6 @@ import os
 import librosa
 import requests
 import torchaudio
-from dotenv import load_dotenv
 from pyannote.audio import Pipeline
 from pydub import AudioSegment
 
@@ -14,14 +13,9 @@ from stt_data_with_llm.config import (
     AUDIO_SEG_UPPER_LIMIT,
     HEADERS,
     HYPER_PARAMETERS,
+    USE_AUTH_TOKEN,
 )
 from stt_data_with_llm.util import setup_logging
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Access the variable from os.environ
-USE_AUTH_TOKEN = os.getenv("use_auth_token")
 
 # Call the setup_logging function at the beginning of your script
 setup_logging("audio_parser.log")
@@ -324,6 +318,7 @@ def get_split_audio(
     # initialize vad pipeline
     pipeline = initialize_vad_pipeline()
     vad = pipeline(temp_audio_file)
+
     original_audio_segment = AudioSegment.from_file(temp_audio_file)
     original_audio_ndarray, sampling_rate = torchaudio.load(temp_audio_file)
     original_audio_ndarray = original_audio_ndarray[0]
