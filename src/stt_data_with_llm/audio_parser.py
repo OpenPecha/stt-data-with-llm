@@ -79,7 +79,7 @@ def initialize_vad_pipeline():
     except Exception as e:
         logging.warning(f"Failed to load online model: {e}. Using local model.")
         vad_pipeline = Pipeline.from_pretrained(
-            "tests/data/pyannote_vad_model",
+            "tests/pyannote_vad_model",
             use_auth_token=False,
         )
     vad_pipeline.instantiate(HYPER_PARAMETERS)
