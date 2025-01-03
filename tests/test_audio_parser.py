@@ -15,9 +15,9 @@ class TestGetSplitAudio(TestCase):
         """
         # Define mock VAD outputs for each audio file
         vad_outputs = {
-            "NW_001": "/Users/ogyenthoga/Desktop/Work/stt-data-with-llm/tests/data/vad_output/NW_001_vad_output.json",
-            "NW_002": "/Users/ogyenthoga/Desktop/Work/stt-data-with-llm/tests/data/vad_output/NW_002_vad_output.json",
-            "NW_003": "/Users/ogyenthoga/Desktop/Work/stt-data-with-llm/tests/data/vad_output/NW_003_vad_output.json",
+            "NW_001": "./tests/data/vad_output/NW_001_vad_output.json",
+            "NW_002": "./tests/data/vad_output/NW_002_vad_output.json",
+            "NW_003": "./tests/data/vad_output/NW_003_vad_output.json",
         }
         # Load all VAD outputs dynamically
         mock_vad_results = {}
