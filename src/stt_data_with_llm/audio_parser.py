@@ -1,10 +1,12 @@
 import io
+import json
 import logging
 import os
 
 import librosa
 import requests
 import torchaudio
+from dotenv import load_dotenv
 from pyannote.audio import Pipeline
 from pydub import AudioSegment
 
@@ -13,10 +15,13 @@ from stt_data_with_llm.config import (
     AUDIO_SEG_UPPER_LIMIT,
     HEADERS,
     HYPER_PARAMETERS,
-    USE_AUTH_TOKEN,
 )
 from stt_data_with_llm.util import setup_logging
 
+# load the evnironment variable
+load_dotenv()
+
+USE_AUTH_TOKEN = os.getenv("use_auth_token")
 # Call the setup_logging function at the beginning of your script
 setup_logging("audio_parser.log")
 
@@ -62,15 +67,21 @@ def sec_to_frame(sec, sr):
 def initialize_vad_pipeline():
     """
     Initializes the Voice Activity Detection (VAD) pipeline using Pyannote.
-
     Returns:
         Pipeline: Initialized VAD pipeline
     """
     logging.info("Initializing Voice Activity Detection pipeline...")
-    vad_pipeline = Pipeline.from_pretrained(
-        "pyannote/voice-activity-detection",
-        use_auth_token=USE_AUTH_TOKEN,
-    )
+    try:
+        vad_pipeline = Pipeline.from_pretrained(
+            "pyannote/voice-activity-detection",
+            use_auth_token=USE_AUTH_TOKEN,
+        )
+    except Exception as e:
+        logging.warning(f"Failed to load online model: {e}. Using local model.")
+        vad_pipeline = Pipeline.from_pretrained(
+            "tests/data/pyannote_vad_model",
+            use_auth_token=False,
+        )
     vad_pipeline.instantiate(HYPER_PARAMETERS)
     logging.info("VAD pipeline initialized successfully.")
     return vad_pipeline
@@ -287,6 +298,26 @@ def process_non_mute_segments(
     return counter
 
 
+def generate_vad_output(audio_file, output_json):
+    """Generate VAD output for a given audio file and save it to a JSON file.
+
+    Args:
+        audio_file (_type_): _description_
+        output_json (_type_): _description_
+    """
+    pipeline = initialize_vad_pipeline()
+    vad = pipeline(audio_file)
+    vad_output = {
+        "timeline": [
+            {"start": segment.start, "end": segment.end}
+            for segment in vad.get_timeline().support()
+        ]
+    }
+
+    with open(output_json, "w", encoding="utf-8") as file:
+        json.dump(vad_output, file, ensure_ascii=False, indent=2)
+
+
 def get_split_audio(
     audio_data,
     full_audio_id,
@@ -315,10 +346,17 @@ def get_split_audio(
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
+
+    vad_output_folder = "tests/data/vad_output"
+    if not os.path.exists(vad_output_folder):
+        os.makedirs(vad_output_folder)
+
     # initialize vad pipeline
     pipeline = initialize_vad_pipeline()
     vad = pipeline(temp_audio_file)
-
+    generate_vad_output(
+        temp_audio_file, f"{vad_output_folder}/{full_audio_id}_vad_output.json"
+    )
     original_audio_segment = AudioSegment.from_file(temp_audio_file)
     original_audio_ndarray, sampling_rate = torchaudio.load(temp_audio_file)
     original_audio_ndarray = original_audio_ndarray[0]
