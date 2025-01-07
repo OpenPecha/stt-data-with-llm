@@ -14,7 +14,9 @@ class TestInferenceText(TestCase):
         """
         mock_api_responses = []
         # Load the mock query_audio_api response from the saved json file
-        with open("tests/data/api_response.json", encoding="utf-8") as file:
+        with open(
+            "tests/query_audio_api_output/api_response.json", encoding="utf-8"
+        ) as file:
             for line in file:
                 mock_api_responses.append(json.loads(line.strip()))
         # Set the return value for the mock query_audio_api
