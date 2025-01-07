@@ -9,8 +9,9 @@ def test_get_split_audio():
     Test function for the get_split_audio functionality.
     """
     audio_urls = {
-        "NW_001": "https://www.rfa.org/tibetan/sargyur/golok-china-religious-restriction-08202024054225.html/@@stream",  # noqa
-        "NW_002": "https://www.rfa.org/tibetan/sargyur/vpn-china-restriction-08152024081404.html/@@stream",
+        "NW_001": "https://www.rfa.org/tibetan/sargyur/golok-china-religious-restriction-08202024054225.html/@@stream",
+        "NW_002": "https://www.rfa.org/tibetan/sargyur/golok-china-religious-restriction-08202024054225.html/@@stream",  # noqa
+        "NW_003": "https://www.rfa.org/tibetan/sargyur/vpn-china-restriction-08152024081404.html/@@stream",
     }
     seg_audio = {}
     for seg_id, audio_url in audio_urls.items():

@@ -9,9 +9,9 @@ from pyannote.audio import Pipeline
 from pydub import AudioSegment
 
 from stt_data_with_llm.config import (
+    AUDIO_HEADERS,
     AUDIO_SEG_LOWER_LIMIT,
     AUDIO_SEG_UPPER_LIMIT,
-    HEADERS,
     HYPER_PARAMETERS,
 )
 from stt_data_with_llm.util import setup_logging
@@ -124,7 +124,7 @@ def get_audio(audio_url):
         bytes: Downloaded and converted audio data
     """
     logging.info(f"Downloading audio from: {audio_url}")
-    response = requests.get(audio_url, headers=HEADERS, stream=True)
+    response = requests.get(audio_url, headers=AUDIO_HEADERS, stream=True)
     if response.status_code == 200:
         audio_data = response.content  # Store original audio in memory
         logging.info("Converting Audio to 16k")
