@@ -1,22 +1,36 @@
+import json
 import logging
+import os
 import wave
 from io import BytesIO
 
-import numpy as np
-from transformers import pipeline
+import requests
+from dotenv import load_dotenv
+
+from stt_data_with_llm.config import API_URL, CHANNELS, SAMPLE_RATE, SAMPLE_WIDTH
+from stt_data_with_llm.util import setup_logging
+
+load_dotenv()
+TOKEN_ID = os.getenv("token_id")
+# Call the setup_logging function at the beginning of your script
+setup_logging("inference_log.log")
+
+INFERENCE_HEADERS = {
+    "Accept": "application/json",
+    "Authorization": f"Bearer {TOKEN_ID}",
+    "Content-Type": "audio/wav",
+}
 
 
-def convert_raw_to_wav_in_memory(
-    raw_audio, sample_rate=16000, channels=1, sample_width=2
-):
+def convert_raw_to_wav_in_memory(raw_audio, sample_rate, channels, sample_width):
     """
     Converts raw audio data to a valid WAV format in memory.
 
     Args:
         raw_audio (bytes): Raw audio data.
-        sample_rate (int): Audio sample rate (default is 16000 Hz).
-        channels (int): Number of audio channels (default is 1 for mono).
-        sample_width (int): Number of bytes per sample (default is 2 for 16-bit audio).
+        sample_rate (int): Audio sample rate.
+        channels (int): Number of audio channels.
+        sample_width (int): Number of bytes per sample.
 
     Returns:
         BytesIO: In-memory WAV file if conversion is successful, None otherwise.
@@ -36,32 +50,28 @@ def convert_raw_to_wav_in_memory(
         return None
 
 
-def wav_to_numpy(wav_buffer):
+def query_audio_api(wav_buffer):
     """
-    Converts an in-memory WAV file to a numpy array.
+    Sends the WAV audio data to the Hugging Face API for inference.
 
     Args:
         wav_buffer (BytesIO): In-memory WAV file buffer.
 
     Returns:
-        np.ndarray: Audio data as a numpy array.
-        int: Sample rate of the audio.
+        dict: API response containing the transcription.
     """
     try:
-        wav_buffer.seek(0)
-        with wave.open(wav_buffer, "rb") as wav_file:
-            frames = wav_file.readframes(wav_file.getnframes())
-            sample_rate = wav_file.getframerate()
-            channels = wav_file.getnchannels()
-
-            # Convert raw frames to numpy array
-            audio_data = np.frombuffer(frames, dtype=np.int16)  # Assuming 16-bit PCM
-            if channels > 1:
-                audio_data = audio_data.reshape(-1, channels)
-            return audio_data, sample_rate
-    except Exception as e:
-        logging.error(f"Error converting WAV to numpy array: {e}")
-        return None, None
+        response = requests.post(API_URL, headers=INFERENCE_HEADERS, data=wav_buffer)
+        response.raise_for_status()
+        api_response = response.json()
+        logging.info("API call successful")
+        with open("api_response.json", "a") as json_file:
+            json.dump(api_response, json_file)
+            json_file.write("\n")
+        return api_response
+    except requests.RequestException as e:
+        logging.error(f"Error during API call: {e}")
+        return None
 
 
 def get_audio_inference_text(raw_audio):
@@ -75,26 +85,18 @@ def get_audio_inference_text(raw_audio):
         str: The transcript generated for the given audio segment.
     """
     try:
-        # Define the model pipeline for inference
-        generator = pipeline(
-            task="automatic-speech-recognition", model="spsither/mms_300_v3.1020"
-        )
-
         # Convert raw audio to WAV format in memory
-        wav_buffer = convert_raw_to_wav_in_memory(raw_audio)
+        wav_buffer = convert_raw_to_wav_in_memory(
+            raw_audio, SAMPLE_RATE, CHANNELS, SAMPLE_WIDTH
+        )
         if not wav_buffer:
             return ""
-
-        # Convert WAV to numpy array
-        audio_data, _ = wav_to_numpy(wav_buffer)  # Only pass the audio data
-        if audio_data is None:
-            return ""
-
         logging.info("Running inference on audio segment")
-
-        # Generate the inference text using the numpy array
-        result = generator(audio_data)
-        transcript = result["text"]
+        # Send the WAV data to the API for transcription
+        response = query_audio_api(wav_buffer)
+        if not response or "text" not in response:
+            return ""
+        transcript = response["text"]
 
         logging.info("Inference completed successfully")
         return transcript
