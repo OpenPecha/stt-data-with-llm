@@ -66,15 +66,21 @@ def sec_to_frame(sec, sr):
 def initialize_vad_pipeline():
     """
     Initializes the Voice Activity Detection (VAD) pipeline using Pyannote.
-
     Returns:
         Pipeline: Initialized VAD pipeline
     """
     logging.info("Initializing Voice Activity Detection pipeline...")
-    vad_pipeline = Pipeline.from_pretrained(
-        "pyannote/voice-activity-detection",
-        use_auth_token=USE_AUTH_TOKEN,
-    )
+    try:
+        vad_pipeline = Pipeline.from_pretrained(
+            "pyannote/voice-activity-detection",
+            use_auth_token=USE_AUTH_TOKEN,
+        )
+    except Exception as e:
+        logging.warning(f"Failed to load online model: {e}. Using local model.")
+        vad_pipeline = Pipeline.from_pretrained(
+            "tests/pyannote_vad_model",
+            use_auth_token=False,
+        )
     vad_pipeline.instantiate(HYPER_PARAMETERS)
     logging.info("VAD pipeline initialized successfully.")
     return vad_pipeline

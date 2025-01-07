@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import wave
@@ -65,9 +64,6 @@ def query_audio_api(wav_buffer):
         response.raise_for_status()
         api_response = response.json()
         logging.info("API call successful")
-        with open("api_response.json", "a") as json_file:
-            json.dump(api_response, json_file)
-            json_file.write("\n")
         return api_response
     except requests.RequestException as e:
         logging.error(f"Error during API call: {e}")
