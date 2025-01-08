@@ -5,18 +5,22 @@ import os
 import librosa
 import requests
 import torchaudio
+from dotenv import load_dotenv
 from pyannote.audio import Pipeline
 from pydub import AudioSegment
 
 from stt_data_with_llm.config import (
+    AUDIO_HEADERS,
     AUDIO_SEG_LOWER_LIMIT,
     AUDIO_SEG_UPPER_LIMIT,
-    HEADERS,
     HYPER_PARAMETERS,
-    USE_AUTH_TOKEN,
 )
 from stt_data_with_llm.util import setup_logging
 
+# load the evnironment variable
+load_dotenv()
+
+USE_AUTH_TOKEN = os.getenv("use_auth_token")
 # Call the setup_logging function at the beginning of your script
 setup_logging("audio_parser.log")
 
@@ -62,15 +66,21 @@ def sec_to_frame(sec, sr):
 def initialize_vad_pipeline():
     """
     Initializes the Voice Activity Detection (VAD) pipeline using Pyannote.
-
     Returns:
         Pipeline: Initialized VAD pipeline
     """
     logging.info("Initializing Voice Activity Detection pipeline...")
-    vad_pipeline = Pipeline.from_pretrained(
-        "pyannote/voice-activity-detection",
-        use_auth_token=USE_AUTH_TOKEN,
-    )
+    try:
+        vad_pipeline = Pipeline.from_pretrained(
+            "pyannote/voice-activity-detection",
+            use_auth_token=USE_AUTH_TOKEN,
+        )
+    except Exception as e:
+        logging.warning(f"Failed to load online model: {e}. Using local model.")
+        vad_pipeline = Pipeline.from_pretrained(
+            "tests/pyannote_vad_model",
+            use_auth_token=False,
+        )
     vad_pipeline.instantiate(HYPER_PARAMETERS)
     logging.info("VAD pipeline initialized successfully.")
     return vad_pipeline
@@ -135,7 +145,7 @@ def get_audio(audio_url):
         bytes: Downloaded and converted audio data
     """
     logging.info(f"Downloading audio from: {audio_url}")
-    response = requests.get(audio_url, headers=HEADERS, stream=True)
+    response = requests.get(audio_url, headers=AUDIO_HEADERS, stream=True)
     if response.status_code == 200:
         audio_data = response.content  # Store original audio in memory
         logging.info("Converting Audio to 16k")

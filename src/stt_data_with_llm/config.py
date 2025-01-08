@@ -19,7 +19,7 @@ HYPER_PARAMETERS = {
 }
 
 # Define the headers (as given)
-HEADERS = {
+AUDIO_HEADERS = {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",  # noqa: E501
     "accept-encoding": "gzip, deflate, br, zstd",
     "accept-language": "en-US,en;q=0.9,en-IN;q=0.8",
@@ -37,4 +37,9 @@ HEADERS = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0",  # noqa: E501
 }
 
-USE_AUTH_TOKEN = "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"
+# Inferfence
+SAMPLE_RATE = 16000
+CHANNELS = 1
+SAMPLE_WIDTH = 2
+
+API_URL = "https://wpgzw4at8o6876h0.us-east-1.aws.endpoints.huggingface.cloud"
