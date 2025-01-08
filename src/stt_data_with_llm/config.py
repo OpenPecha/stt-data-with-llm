@@ -43,3 +43,6 @@ CHANNELS = 1
 SAMPLE_WIDTH = 2
 
 API_URL = "https://wpgzw4at8o6876h0.us-east-1.aws.endpoints.huggingface.cloud"
+
+# Validation
+CER_THRESHOLD = 0.4
