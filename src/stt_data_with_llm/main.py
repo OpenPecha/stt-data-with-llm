@@ -11,7 +11,11 @@ from stt_data_with_llm.config import (
 )
 from stt_data_with_llm.inference_transcript import get_audio_inference_text
 from stt_data_with_llm.LLM_post_corrector import get_LLM_corrected_text
-from stt_data_with_llm.util import calculate_cer
+from stt_data_with_llm.util import (
+    calculate_cer,
+    get_inference_transcript,
+    get_original_text,
+)
 
 logging.basicConfig(filename="./pipeline.log", level=logging.INFO)
 
@@ -69,7 +73,11 @@ def post_process_audio_transcript_pairs(audio_data_info):
     for audio_seg_id, audio_seg_data in split_audio_data.items():
         audio_seg_inference_transcript = get_audio_inference_text(audio_seg_data)
         inference_transcript += f"{audio_seg_inference_transcript}\n"
-    if not is_valid_transcript(inference_transcript, reference_transcript):
+    validation_original_text = get_original_text(reference_transcript)
+    validation_inference_transcript = get_inference_transcript(inference_transcript)
+    if not is_valid_transcript(
+        validation_inference_transcript, validation_original_text
+    ):
         return None, full_audio_id
     reference_transcript_with_inference_segmentation = transfer_segmentation(
         inference_transcript, reference_transcript

@@ -51,3 +51,35 @@ def calculate_cer(reference, prediction):
     except Exception as e:
         print(f"Error calculating CER: {e}")
         return 1.0  # Return a high CER for safety
+
+
+def get_original_text(original_text):
+    """reads the original text and removes unwanted characters
+
+    Args:
+        OriginalText (string): location of the original text file
+
+    Returns:
+        string: original text without unwanted characters
+    """
+    # remove unwanted characters
+    target = original_text.replace("“", "").replace("”", "")
+    target = target.replace("\n", "")
+
+    return target
+
+
+def get_inference_transcript(inference_transcript):
+
+    """reads the inference text and removes unwanted characters
+
+    Args:
+        inference_transcript (string): location of the inference text file
+
+    Returns:
+        string: inference text without unwanted characters
+    """
+    # remove unwanted characters
+    target = inference_transcript.replace("\n", "")
+
+    return target
