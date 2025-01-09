@@ -91,10 +91,10 @@ def post_process_audio_transcript_pairs(audio_data_info):
         seg_inference_text = inference_transcripts[seg_walker]
         seg_reference_text = reference_transcripts[seg_walker]
         if not is_valid_transcript(seg_inference_text, seg_reference_text):
-            seg_LLM_corrected_text = seg_inference_text
+            seg_LLM_corrected_text = get_LLM_corrected_text(seg_inference_text, False)
         else:
             seg_LLM_corrected_text = get_LLM_corrected_text(
-                seg_inference_text, seg_reference_text
+                seg_inference_text, True, seg_reference_text
             )
         post_process_audio_transcript_pairs[audio_seg_id] = {
             "audio_seg_data": audio_seg_data,
