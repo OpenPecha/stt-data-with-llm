@@ -8,8 +8,8 @@ from stt_data_with_llm.main import (
 
 
 def test_validation():
-    original_text_file_path = "tests/data/original_text_file.txt"
-    inference_transcript_file_path = "tests/data/inference_transcript.txt"
+    original_text_file_path = "tests/text_files/original_text_file.txt"
+    inference_transcript_file_path = "tests/text_files/inference_transcript.txt"
     with open(original_text_file_path, encoding="utf-8") as file:
         original_text = file.read()
     with open(inference_transcript_file_path, encoding="utf-8") as file:
