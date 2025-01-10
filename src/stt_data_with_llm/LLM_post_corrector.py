@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Optional
 
 import anthropic
 from dotenv import load_dotenv
@@ -11,7 +10,7 @@ load_dotenv()
 setup_logging("llm_corrector_log.log")
 
 
-def get_LLM_corrected_text(inference_text: str, reference_text: str) -> Optional[str]:
+def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
     """
     Corrects colloquial text with spelling mistakes using Claude API by referencing a literal sentence.
 
@@ -25,15 +24,24 @@ def get_LLM_corrected_text(inference_text: str, reference_text: str) -> Optional
     # Initialize the Anthropic client
     client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-    # Construct the prompt
-    prompt = (
-        "I have a colloquial sentence with incorrect spelling. "
-        "I have a literal sentence with correct spelling. "
-        "Please refer to literal sentence and correct the spelling mistakes in colloquial one. "
-        f"colloquial sentence: {inference_text} "
-        f"literal sentence: {reference_text} "
-        "Give me the final corrected sentence without any explanation"
-    )
+    if is_valid and reference_text is not None:
+        prompt = (
+            "I have two sentences: a colloquial sentence and a reference sentence. "
+            "Your task is to EXACTLY match the spellings from the reference sentence. "
+            "Do not make any corrections beyond matching the reference sentence exactly, even if you think a word is misspelled. "  # noqa
+            "If a word appears the same way in both sentences, do not change it. "
+            f"Colloquial sentence: {inference_text} "
+            f"Reference sentence: {reference_text} "
+            "Give me only the corrected sentence that exactly matches the reference, without any explanation"
+        )
+    else:
+        prompt = (
+            "I have a colloquial sentence that may contain spelling mistakes. "
+            "Please correct any spelling mistakes while preserving the meaning and colloquial nature of the text. "
+            "Only fix spelling errors - do not change the style, word choice, or grammar. "
+            f"Sentence: {inference_text} "
+            "Give me only the corrected sentence without any explanation"
+        )
 
     try:
         # Make API call to Claude
