@@ -34,7 +34,7 @@ def read_spreadsheet(sheet_id):
         return pd.DataFrame()
 
 
-def catalog_parser(google_sheet_id):
+def parse_catalog(google_sheet_id):
     """
     Parses an audio transcription catalog from a Google Spreadsheet.
 

@@ -1,6 +1,6 @@
 import json
 
-from stt_data_with_llm.catalog_parser import catalog_parser
+from stt_data_with_llm.catalog_parser import parse_catalog
 
 
 def test_catalog_parser():
@@ -14,7 +14,7 @@ def test_catalog_parser():
 
     # Parse the catalog
 
-    audio_transcription_catalog = catalog_parser(google_spread_sheet_id)
+    audio_transcription_catalog = parse_catalog(google_spread_sheet_id)
     expected_output_json_path = "tests/data/expected_catalog_data.json"
     with open(expected_output_json_path, encoding="utf-8") as file:
         expected_output_json = json.load(file)
