@@ -192,34 +192,28 @@ def chop_long_segment_duration(
     while chop_length > upper_limit:
         chop_length = chop_length / 2
     for chop_index in range(int(segment_split_duration / chop_length)):
-        segment_split_chop = original_audio_segment[
-            sec_to_millis(
-                vad_span.start
-                + frame_to_sec(split_start, sampling_rate)
-                + chop_length * chop_index
-            ) : sec_to_millis(  # noqa: E203
-                vad_span.start
-                + frame_to_sec(split_start, sampling_rate)
-                + chop_length * (chop_index + 1)
-            )
-        ]
-        segment_key = f"{full_audio_id}_{counter:04}"  # noqa: E231
+        start_ms = sec_to_millis(
+            vad_span.start
+            + frame_to_sec(split_start, sampling_rate)
+            + chop_length * chop_index
+        )
+        end_ms = sec_to_millis(  # noqa: E203
+            vad_span.start
+            + frame_to_sec(split_start, sampling_rate)
+            + chop_length * (chop_index + 1)
+        )
+        segment_split_chop = original_audio_segment[start_ms:end_ms]
+        segment_key = (
+            f"{full_audio_id}_{counter:04}_{int(start_ms)}_to_{int(end_ms)}"  # noqa
+        )
         split_audio[segment_key] = segment_split_chop.raw_data
         save_segment(
             segment=segment_split_chop,
             folder=output_folder,
             prefix=full_audio_id,
             id=counter,
-            start_ms=sec_to_millis(
-                vad_span.start
-                + frame_to_sec(split_start, sampling_rate)
-                + chop_length * chop_index
-            ),
-            end_ms=sec_to_millis(
-                vad_span.start
-                + frame_to_sec(split_start, sampling_rate)
-                + chop_length * (chop_index + 1)
-            ),
+            start_ms=start_ms,
+            end_ms=end_ms,
         )
         counter += 1
     return counter
@@ -255,30 +249,26 @@ def process_non_mute_segments(
         int: The updated counter after processing the non-mute segments.
     """  # noqa: E501
     for split_start, split_end in non_mute_segment_splits:
-        segment_split = original_audio_segment[
-            sec_to_millis(
-                vad_span.start + frame_to_sec(split_start, sampling_rate)
-            ) : sec_to_millis(  # noqa: E203
-                vad_span.start + frame_to_sec(split_end, sampling_rate)
-            )
-        ]
+        start_ms = sec_to_millis(
+            vad_span.start + frame_to_sec(split_start, sampling_rate)
+        )
+        end_ms = sec_to_millis(  # noqa: E203
+            vad_span.start + frame_to_sec(split_end, sampling_rate)
+        )
+        segment_split = original_audio_segment[start_ms:end_ms]
         segment_split_duration = (
             vad_span.start + frame_to_sec(split_end, sampling_rate)
         ) - (vad_span.start + frame_to_sec(split_start, sampling_rate))
         if lower_limit <= segment_split_duration <= upper_limit:
-            segment_key = f"{full_audio_id}_{counter:04}"  # noqa: E231
+            segment_key = f"{full_audio_id}_{counter:04}_{int(start_ms)}_to_{int(end_ms)}"  # noqa: E231
             split_audio[segment_key] = segment_split.raw_data
             save_segment(
                 segment=segment_split,
                 folder=output_folder,
                 prefix=full_audio_id,
                 id=counter,
-                start_ms=sec_to_millis(
-                    vad_span.start + frame_to_sec(split_start, sampling_rate)
-                ),
-                end_ms=sec_to_millis(
-                    vad_span.start + frame_to_sec(split_end, sampling_rate)
-                ),
+                start_ms=start_ms,
+                end_ms=end_ms,
             )
             counter += 1
         elif segment_split_duration > upper_limit:
@@ -335,20 +325,21 @@ def get_split_audio(
 
     counter = 1
     for vad_span in vad.get_timeline().support():
-        vad_segment = original_audio_segment[
-            sec_to_millis(vad_span.start) : sec_to_millis(vad_span.end)  # noqa: E203
-        ]
+        start_ms = sec_to_millis(vad_span.start)
+        end_ms = sec_to_millis(vad_span.end)
+        vad_segment = original_audio_segment[start_ms:end_ms]
         vad_span_length = vad_span.end - vad_span.start
         if lower_limit <= vad_span_length <= upper_limit:
-            segment_key = f"{full_audio_id}_{counter:04}"  # noqa: E231
+            segment_key = f"{full_audio_id}_{counter:04}_{int(start_ms)}_to_{int(end_ms)}"  # noqa: E231
             split_audio[segment_key] = vad_segment.raw_data
+
             save_segment(
                 segment=vad_segment,
                 folder=output_folder,
                 prefix=full_audio_id,
                 id=counter,
-                start_ms=sec_to_millis(vad_span.start),
-                end_ms=sec_to_millis(vad_span.end),
+                start_ms=start_ms,
+                end_ms=end_ms,
             )
             counter += 1
         elif vad_span_length > upper_limit:

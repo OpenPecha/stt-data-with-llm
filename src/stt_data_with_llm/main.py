@@ -1,5 +1,7 @@
+import csv
 import logging
 
+from boto3.session import Session
 from fast_antx.core import transfer
 
 from stt_data_with_llm.audio_parser import get_audio, get_split_audio
@@ -105,11 +107,119 @@ def post_process_audio_transcript_pairs(audio_data_info):
     return post_processed_audio_transcript_pairs, full_audio_id
 
 
+def extract_duration_from_filename(file_name):
+    """
+    Extracts start_ms and end_ms from the file_name and calculates the duration in seconds.
+
+    Args:
+        file_name (str): The file name in the format "full_audio_id_counter_start_ms_to_end_ms".
+
+    Returns:
+        float: The duration of the audio segment in seconds.
+    """
+    try:
+        # Extract start_ms and end_ms from the file_name
+        parts = file_name.split("_")
+        start_ms = int(parts[-3])
+        end_ms = int(parts[-1])  # Last part is end_ms
+
+        # Calculate duration
+        duration_ms = end_ms - start_ms
+        return round(duration_ms / 1000, 2)
+    except Exception as e:
+        logging.error(f"Error extracting duration from file name {file_name}: {e}")
+        return 0.0  # Default to 0 if there's an error
+
+
+def upload_to_s3(bucket_name, file_name, file_data):
+    """
+    Uploads a file to a specific directory in an S3 bucket and generates a CloudFront URL.
+
+    Args:
+        bucket_name (str): The name of the S3 bucket (e.g., "monlam.ai.stt").
+        file_name (str): The full key for the file, including directory (e.g., "wav16k/audio_0001_0_to_5000.wav").
+        file_data (bytes): The raw audio data to upload.
+
+    Returns:
+        str: The CloudFront URL for the uploaded file.
+    """
+    session = Session()
+    s3 = session.client("s3")
+    try:
+        # Upload the file to S3
+        s3.put_object(Bucket=bucket_name, Key=file_name, Body=file_data)
+
+        # Remove the "wav16k/" prefix from file_name for the CloudFront URL
+        cleaned_file_name = (
+            file_name.split("/", 1)[1] if "/" in file_name else file_name
+        )
+
+        # Generate the CloudFront URL
+        cloudfront_url = (
+            f"https://d38pmlk0v88drf.cloudfront.net/{cleaned_file_name}"  # noqa
+        )
+        logging.info(f"File uploaded to S3 and accessible at: {cloudfront_url}")
+        return cloudfront_url
+    except Exception as e:
+        logging.error(f"Error uploading file to S3: {e}")
+        return None
+
+
 def save_post_processed_audio_transcript_pairs(
     post_processed_audio_transcript_pairs, audio_data_info
 ):
-    # Save post processed audio transcript pairs in csv
-    pass
+    output_file = "processed_audio_transcript.csv"
+    # Define Csv column headers
+    headers = [
+        "file_name",
+        "audio_url",
+        "inference_transcript",
+        "audio_duration",
+        "speaker_name",
+        "speaker_gender",
+        "news_channel",
+        "publishing_year",
+    ]
+    # Extract the metadata from the catalog
+    speaker_name = audio_data_info.get("speaker_name", "")
+    speaker_gender = audio_data_info.get("speaker_gender", "")
+    news_channel = audio_data_info.get("news_channel", "")
+    publishing_year = audio_data_info.get("publishing_year", "")
+    # S3 bucket name
+    s3_bucket_name = "monlam.ai.stt"
+
+    try:
+        with open(output_file, "w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=headers)
+            writer.writeheader()
+            for (
+                audio_seg_id,
+                audio_seg_data,
+            ) in post_processed_audio_transcript_pairs.items():
+                # Prepare file name and upload to S3
+                file_name = f"wav16k/{audio_seg_id}.wav"
+                audio_url = upload_to_s3(
+                    s3_bucket_name, file_name, audio_seg_data["audio_seg_data"]
+                )
+
+                # Extract duration from the audio_seg_id (file_name)
+                audio_duration = extract_duration_from_filename(audio_seg_id)
+                # Write a row to the CSV file
+                writer.writerow(
+                    {
+                        "filename": audio_seg_id,
+                        "audio_url": audio_url,
+                        "inference_transcript": audio_seg_data["inference_transcript"],
+                        "audio_duration": audio_duration,
+                        "speaker_name": speaker_name,
+                        "speaker_gender": speaker_gender,
+                        "news_channel": news_channel,
+                        "publishing_year": publishing_year,
+                    }
+                )
+        logging.info(f"Processed audio transcript pairs saved to {output_file}")
+    except Exception as e:
+        logging.error(f"Error saving processed audio transcript pairs: {e}")
 
 
 def get_audio_transcript_pairs(audio_transcription_catalog_url):
