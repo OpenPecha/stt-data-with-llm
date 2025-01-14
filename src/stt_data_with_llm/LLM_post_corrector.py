@@ -1,13 +1,17 @@
 import logging
 import os
 
-import anthropic
 from dotenv import load_dotenv
+from google import genai
 
 from stt_data_with_llm.util import setup_logging
 
 load_dotenv()
-setup_logging("llm_corrector_log.log")
+setup_logging("llm_corrector.log")
+
+
+# Initialize the Gemini API client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
 def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
@@ -21,48 +25,48 @@ def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
     Returns:
         str: Corrected text, or None if API call fails
     """
-    # Initialize the Anthropic client
-    client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     if is_valid and reference_text is not None:
-        prompt = """
+        prompt = f"""
             I have two sentences: a colloquial sentence and a reference sentence.
             Your task is to EXACTLY match the spellings from the reference sentence.
             Do not make any corrections beyond matching the reference sentence exactly, even if you think a word is misspelled.   # noqa
             If a word appears the same way in both sentences, do not change it.
-            Colloquial sentence: {inference_transcript}
-            Reference sentence: {reference_transcript}
+            Colloquial sentence: {inference_text}
+            Reference sentence: {reference_text}
             Give me only the corrected sentence that exactly matches the reference, without any explanation
-            """.format(
-            inference_transcript=inference_text, reference_transcript=reference_text
-        )
+            """
 
     else:
-        prompt = """
+        prompt = f"""
             I have a colloquial sentence that may contain spelling mistakes.
             Please correct any spelling mistakes while preserving the meaning and colloquial nature of the text.
             Only fix spelling errors - do not change the style, word choice, or grammar.
-            Sentence: {inference_transcript} "
+            Sentence: {inference_text}
             Give me only the corrected sentence without any explanation
-            """.format(
-            inference_transcript=inference_text
-        )
+            """
 
     try:
-        # Make API call to Claude
-        response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
-            max_tokens=1000,
-            messages=[{"role": "user", "content": prompt}],
+        # Make API call to Gemini
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-exp",
+            contents=prompt,
         )
+        # Extract and return the corrected text
+        corrected_text = response.text.strip()
 
         # Extract and return the corrected text
         logging.info(
-            f"Inference_transcript: {inference_text}\nReference_transcript: {reference_text}\nCorrected_text: {response.content[0].text.strip()}"  # noqa
+            f"Inference_transcript: {inference_text}\nReference_transcript: {reference_text}\nCorrected_text: {corrected_text}"  # noqa
         )
-        return response.content[0].text.strip()
+        return corrected_text
 
     except Exception as e:
         # Log error and return None if API call fails
         logging.error(f"Error in LLM correction: {str(e)}")
         return None
+
+
+if __name__ == "__main__":
+    inference_text = "ལྷག་པར་དགན་སྡེ་ཁག་ཏུ་ཆོས་ཕྱོགས་ཀྱི་བྱེད་སྒོ་ལ་དམ་སྒྲགས་དང་།"
+    get_LLM_corrected_text(inference_text, False)
