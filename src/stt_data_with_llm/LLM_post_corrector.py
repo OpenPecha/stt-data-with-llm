@@ -1,17 +1,13 @@
 import logging
 import os
 
+import anthropic
 from dotenv import load_dotenv
-from google import genai
 
 from stt_data_with_llm.util import setup_logging
 
 load_dotenv()
 setup_logging("llm_corrector.log")
-
-
-# Initialize the Gemini API client
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
 def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
@@ -25,6 +21,8 @@ def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
     Returns:
         str: Corrected text, or None if API call fails
     """
+    # Initialize the Anthropic client
+    client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     if is_valid and reference_text is not None:
         prompt = f"""
@@ -36,37 +34,29 @@ def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
             Reference sentence: {reference_text}
             Give me only the corrected sentence that exactly matches the reference, without any explanation
             """
-
     else:
         prompt = f"""
-            I have a colloquial sentence that may contain spelling mistakes.
-            Please correct any spelling mistakes while preserving the meaning and colloquial nature of the text.
-            Only fix spelling errors - do not change the style, word choice, or grammar.
-            Sentence: {inference_text}
+            You are a Tibetan Language Expert. I want you to look for any spelling and grammar mistakes in the following Tibetan sentence. Make sure that you don't change the terms and sentence if its not grammatically incorrect.
+            Tibetan sentence: {inference_text}
+            Output: output should be only the corrected sentence.
             Give me only the corrected sentence without any explanation
             """
 
     try:
-        # Make API call to Gemini
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
-            contents=prompt,
+        # Make API call to Claude
+        response = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1000,
+            messages=[{"role": "user", "content": prompt}],
         )
-        # Extract and return the corrected text
-        corrected_text = response.text.strip()
 
         # Extract and return the corrected text
         logging.info(
-            f"Inference_transcript: {inference_text}\nReference_transcript: {reference_text}\nCorrected_text: {corrected_text}"  # noqa
+            f"Inference_transcript: {inference_text}\nReference_transcript: {reference_text}\nCorrected_text: {response.content[0].text.strip()}"  # noqa
         )
-        return corrected_text
+        return response.content[0].text.strip()
 
     except Exception as e:
         # Log error and return None if API call fails
         logging.error(f"Error in LLM correction: {str(e)}")
         return None
-
-
-if __name__ == "__main__":
-    inference_text = "ལྷག་པར་དགན་སྡེ་ཁག་ཏུ་ཆོས་ཕྱོགས་ཀྱི་བྱེད་སྒོ་ལ་དམ་སྒྲགས་དང་།"
-    get_LLM_corrected_text(inference_text, False)
