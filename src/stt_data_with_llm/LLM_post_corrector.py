@@ -25,22 +25,27 @@ def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
     client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     if is_valid and reference_text is not None:
-        prompt = (
-            "I have two sentences: a colloquial sentence and a reference sentence. "
-            "Your task is to EXACTLY match the spellings from the reference sentence. "
-            "Do not make any corrections beyond matching the reference sentence exactly, even if you think a word is misspelled. "  # noqa
-            "If a word appears the same way in both sentences, do not change it. "
-            f"Colloquial sentence: {inference_text} "
-            f"Reference sentence: {reference_text} "
-            "Give me only the corrected sentence that exactly matches the reference, without any explanation"
+        prompt = """
+            I have two sentences: a colloquial sentence and a reference sentence.
+            Your task is to EXACTLY match the spellings from the reference sentence.
+            Do not make any corrections beyond matching the reference sentence exactly, even if you think a word is misspelled.   # noqa
+            If a word appears the same way in both sentences, do not change it.
+            Colloquial sentence: {inference_transcript}
+            Reference sentence: {reference_transcript}
+            Give me only the corrected sentence that exactly matches the reference, without any explanation
+            """.format(
+            inference_transcript=inference_text, reference_transcript=reference_text
         )
+
     else:
-        prompt = (
-            "I have a colloquial sentence that may contain spelling mistakes. "
-            "Please correct any spelling mistakes while preserving the meaning and colloquial nature of the text. "
-            "Only fix spelling errors - do not change the style, word choice, or grammar. "
-            f"Sentence: {inference_text} "
-            "Give me only the corrected sentence without any explanation"
+        prompt = """
+            I have a colloquial sentence that may contain spelling mistakes.
+            Please correct any spelling mistakes while preserving the meaning and colloquial nature of the text.
+            Only fix spelling errors - do not change the style, word choice, or grammar.
+            Sentence: {inference_transcript} "
+            Give me only the corrected sentence without any explanation
+            """.format(
+            inference_transcript=inference_text
         )
 
     try:

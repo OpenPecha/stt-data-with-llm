@@ -10,13 +10,14 @@ authors = [
 ]
 description = "A small example package"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
+  "anthropic<=0.42.0",
   "evaluate<=0.4.3",
   "jiwer<=3.0.5",
   "python-dotenv<=1.0.1",

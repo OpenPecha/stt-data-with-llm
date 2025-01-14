@@ -1,25 +1,19 @@
-import logging
-
-from stt_data_with_llm.main import (
-    get_inference_transcript,
-    get_original_text,
-    is_valid_transcript,
-)
+from stt_data_with_llm.main import is_valid_transcript
 
 
 def test_validation():
-    original_text_file_path = "tests/text_files/original_text_file.txt"
-    inference_transcript_file_path = "tests/text_files/inference_transcript.txt"
-    with open(original_text_file_path, encoding="utf-8") as file:
-        original_text = file.read()
-    with open(inference_transcript_file_path, encoding="utf-8") as file:
-        inference_transcript = file.read()
-    validation_original_text = get_original_text(original_text)
-    validation_inference_transcript = get_inference_transcript(inference_transcript)
-    logging.info(validation_original_text)
-    logging.info(validation_inference_transcript)
+
     assert is_valid_transcript(
-        validation_inference_transcript, validation_original_text
+        "རྒྱ་ནག་གཞུང་གིས་མཚོ་སྔོན་ཞིང་ཆེན་གོ་ལོག་ཁུལ་བཙུགས་ནས་ལོ་འཁོར་བདུན་ཅུ་འཁོ་བའི་མཛད་སྒོ་འཚོགས་ཡོད་པ་བཞིན།",
+        "རྒྱ་ནག་གཞུང་གིས་མཚོ་སྔོན་ཞིང་ཆེན་མགོ་ལོག་ཁུལ་བཙུགས་ནས་ལོ་འཁོར་ ༧༠ འཁོར་བའི་མཛད་སྒོ་འཚོགས་ཡོད་པ་བཞིན།་",
+    )
+    assert not is_valid_transcript(
+        "ཕྱི་ཟླ་བརྒྱད་པའི་ནང་རྒྱ་ནག་གཞུང་གི་མགོ་ལོག་མངའ་ཁུལ་གྱི་ས་གནས་གང་སར་དམ་བསྒྲགས་ཤུགས་ཆེར་ཆེ་ཡོད་པ་དང་།",
+        "",
+    )
+    assert not is_valid_transcript(
+        "ལྷག་པར་དགན་སྡེ་ཁག་ཏུ་ཆོས་ཕྱོགས་ཀྱི་བྱེད་སྒོ་ལ་དམ་སྒྲགས་དང་།",
+        "ལྷག་པར་དུ་དགོན་སྡེ་ཁག་ཏུ་ཆོས་ཕྱོགས་ཀྱི་བྱེད་སྒོ་ལ་དམ་དྲག་དང་བདེ་འཇགས་ཆེད་ཡིན་སྐོར་བརྗོད་ནས།",
     )
 
 
