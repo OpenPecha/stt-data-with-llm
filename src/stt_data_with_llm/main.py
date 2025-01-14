@@ -1,7 +1,7 @@
 import csv
 import logging
 
-from boto3.session import Session
+import boto3
 from fast_antx.core import transfer
 
 from stt_data_with_llm.audio_parser import get_audio, get_split_audio
@@ -143,20 +143,27 @@ def upload_to_s3(bucket_name, file_name, file_data):
     Returns:
         str: The CloudFront URL for the uploaded file.
     """
-    session = Session()
+    session = boto3.Session()
     s3 = session.client("s3")
     try:
         # Upload the file to S3
-        s3.put_object(Bucket=bucket_name, Key=file_name, Body=file_data)
+        s3.put_object(
+            Bucket=bucket_name,
+            Key=file_name,
+            Body=file_data,
+            ContentType="audio/wav",
+            ContentDisposition="inline",
+        )
 
         # Remove the "wav16k/" prefix from file_name for the CloudFront URL
         cleaned_file_name = (
             file_name.split("/", 1)[1] if "/" in file_name else file_name
         )
+        logging.info(cleaned_file_name)
 
         # Generate the CloudFront URL
         cloudfront_url = (
-            f"https://d38pmlk0v88drf.cloudfront.net/{cleaned_file_name}"  # noqa
+            f"https://d38pmlk0v88drf.cloudfront.net/testing/{cleaned_file_name}"  # noqa
         )
         logging.info(f"File uploaded to S3 and accessible at: {cloudfront_url}")
         return cloudfront_url
