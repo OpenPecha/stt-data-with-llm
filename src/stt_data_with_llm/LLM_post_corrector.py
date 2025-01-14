@@ -36,7 +36,8 @@ def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
             """
     else:
         prompt = f"""
-            You are a Tibetan Language Expert. I want you to look for any spelling and grammar mistakes in the following Tibetan sentence. Make sure that you don't change the terms and sentence if its not grammatically incorrect.
+            You are a Tibetan Language Expert. I want you to look for any spelling and grammar mistakes in the following Tibetan
+            sentence. Make sure that you don't change the terms and sentence if its not grammatically incorrect.
             Tibetan sentence: {inference_text}
             Output: output should be only the corrected sentence.
             Give me only the corrected sentence without any explanation
