@@ -15,7 +15,7 @@ def test_upload_to_s3():
             audio_data, seg_id, AUDIO_SEG_LOWER_LIMIT, AUDIO_SEG_UPPER_LIMIT
         )
         for (split_seg_id, audio_seg_data) in split_audio_data.items():
-            file_name = f"testing/{split_seg_id}.wav"
+            file_name = f"stt_news_auto_data/{split_seg_id}.wav"
             upload_to_s3(s3_bucket_name, file_name, audio_seg_data)
 
 

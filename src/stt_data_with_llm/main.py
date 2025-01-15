@@ -1,4 +1,5 @@
 import csv
+import io
 import logging
 
 import boto3
@@ -38,6 +39,13 @@ def transfer_segmentation(inference_transcript, reference_transcript):
         inference_transcript, patterns, reference_transcript
     )
     return reference_transcript_with_inference_segmentation
+
+
+def audio_segment_to_bytes(audio_segment):
+    buffer = io.BytesIO()
+    audio_segment.export(buffer, format="wav")
+    audio_data = buffer.getvalue()
+    return audio_data
 
 
 def is_valid_transcript(inference_transcript, reference_transcript):
@@ -131,40 +139,27 @@ def extract_duration_from_filename(file_name):
         return 0.0  # Default to 0 if there's an error
 
 
-def upload_to_s3(bucket_name, file_name, file_data):
-    """
-    Uploads a file to a specific directory in an S3 bucket and generates a CloudFront URL.
-
-    Args:
-        bucket_name (str): The name of the S3 bucket (e.g., "monlam.ai.stt").
-        file_name (str): The full key for the file, including directory (e.g., "wav16k/audio_0001_0_to_5000.wav").
-        file_data (bytes): The raw audio data to upload.
-
-    Returns:
-        str: The CloudFront URL for the uploaded file.
-    """
+def upload_to_s3(bucket_name, file_name, audio_segment):
     session = boto3.Session()
     s3 = session.client("s3")
     try:
+        # Convert AudioSegment to bytes
+        audio_data = audio_segment_to_bytes(audio_segment)
+
         # Upload the file to S3
         s3.put_object(
             Bucket=bucket_name,
             Key=file_name,
-            Body=file_data,
+            Body=audio_data,
             ContentType="audio/wav",
             ContentDisposition="inline",
         )
 
-        # Remove the "wav16k/" prefix from file_name for the CloudFront URL
+        # Generate the CloudFront URL
         cleaned_file_name = (
             file_name.split("/", 1)[1] if "/" in file_name else file_name
         )
-        logging.info(cleaned_file_name)
-
-        # Generate the CloudFront URL
-        cloudfront_url = (
-            f"https://d38pmlk0v88drf.cloudfront.net/testing/{cleaned_file_name}"  # noqa
-        )
+        cloudfront_url = f"https://d38pmlk0v88drf.cloudfront.net/stt_news_auto_data/{cleaned_file_name}"  # noqa
         logging.info(f"File uploaded to S3 and accessible at: {cloudfront_url}")
         return cloudfront_url
     except Exception as e:
@@ -203,8 +198,9 @@ def save_post_processed_audio_transcript_pairs(
                 audio_seg_id,
                 audio_seg_data,
             ) in post_processed_audio_transcript_pairs.items():
+
                 # Prepare file name and upload to S3
-                file_name = f"wav16k/{audio_seg_id}.wav"
+                file_name = f"stt_news_auto_data/{audio_seg_id}.wav"
                 audio_url = upload_to_s3(
                     s3_bucket_name, file_name, audio_seg_data["audio_seg_data"]
                 )
@@ -229,8 +225,12 @@ def save_post_processed_audio_transcript_pairs(
         logging.error(f"Error saving processed audio transcript pairs: {e}")
 
 
-def get_audio_transcript_pairs(audio_transcription_catalog_url):
-    audio_transcription_datas = parse_catalog(audio_transcription_catalog_url)
+def get_audio_transcript_pairs(
+    audio_transcription_catalog_url, start_sr_no=None, end_sr_no=None
+):
+    audio_transcription_datas = parse_catalog(
+        audio_transcription_catalog_url, start_sr_no, end_sr_no
+    )
     for data_id, audio_data_info in audio_transcription_datas.items():
         (
             post_processed_audio_transcript_pairs,
@@ -242,3 +242,9 @@ def get_audio_transcript_pairs(audio_transcription_catalog_url):
             )
         else:
             logging.info(f"Audio data with ID {full_audio_id} has invalid transcript")
+
+
+if __name__ == "__main__":
+    # Replace with your actual spreadsheet ID
+    google_spread_sheet_id = "1Iy01o2hsrhWpbOQzFfC1gOVqw4j1AMp7poEU2eu7WN0"
+    get_audio_transcript_pairs(google_spread_sheet_id, 1, 20)

@@ -34,22 +34,33 @@ def read_spreadsheet(sheet_id):
         return pd.DataFrame()
 
 
-def parse_catalog(google_sheet_id):
+def parse_catalog(google_sheet_id, start_sr_no=None, end_sr_no=None):
     """
-    Parses an audio transcription catalog from a Google Spreadsheet.
+    Parses an audio transcription catalog from a Google Spreadsheet within a specified range of Sr.no values.
 
     Args:
-        audio_url (str): The URL of the Google Spreadsheet containing the audio transcription catalog.
+        google_sheet_id (str): The ID of the Google Spreadsheet containing the audio transcription catalog.
+        start_sr_no (int, optional): The starting Sr.no to process. If None, starts from the beginning.
+        end_sr_no (int, optional): The ending Sr.no to process. If None, processes until the end.
 
     Returns:
         dict: A dictionary where keys are unique IDs (e.g., "full_audio_id") and values are dictionaries of audio data.
     """
+
     catalog_df = read_spreadsheet(google_sheet_id)
 
     # Check if the catalog DataFrame is empty
     if catalog_df.empty:
         logging.warning("Catalog DataFrame is empty.")
         return {}
+    # Convert Sr.no column to numeric, replacing any non-numeric values with NaN
+    catalog_df["Sr.no"] = pd.to_numeric(catalog_df["Sr.no"], errors="coerce")
+
+    # Filter the DataFrame based on the specified range
+    if start_sr_no is not None:
+        catalog_df = catalog_df[catalog_df["Sr.no"] >= start_sr_no]
+    if end_sr_no is not None:
+        catalog_df = catalog_df[catalog_df["Sr.no"] <= end_sr_no]
 
     audio_transcription_catalog = {}
 

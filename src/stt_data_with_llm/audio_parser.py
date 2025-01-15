@@ -206,7 +206,7 @@ def chop_long_segment_duration(
         segment_key = (
             f"{full_audio_id}_{counter:04}_{int(start_ms)}_to_{int(end_ms)}"  # noqa
         )
-        split_audio[segment_key] = segment_split_chop.raw_data
+        split_audio[segment_key] = segment_split_chop
         save_segment(
             segment=segment_split_chop,
             folder=output_folder,
@@ -261,7 +261,7 @@ def process_non_mute_segments(
         ) - (vad_span.start + frame_to_sec(split_start, sampling_rate))
         if lower_limit <= segment_split_duration <= upper_limit:
             segment_key = f"{full_audio_id}_{counter:04}_{int(start_ms)}_to_{int(end_ms)}"  # noqa: E231
-            split_audio[segment_key] = segment_split.raw_data
+            split_audio[segment_key] = segment_split
             save_segment(
                 segment=segment_split,
                 folder=output_folder,
@@ -331,7 +331,7 @@ def get_split_audio(
         vad_span_length = vad_span.end - vad_span.start
         if lower_limit <= vad_span_length <= upper_limit:
             segment_key = f"{full_audio_id}_{counter:04}_{int(start_ms)}_to_{int(end_ms)}"  # noqa: E231
-            split_audio[segment_key] = vad_segment.raw_data
+            split_audio[segment_key] = vad_segment
 
             save_segment(
                 segment=vad_segment,
