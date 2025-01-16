@@ -1,6 +1,9 @@
 import csv
 import io
+import json
 import logging
+import os
+import sys
 
 import boto3
 from fast_antx.core import transfer
@@ -19,6 +22,9 @@ from stt_data_with_llm.util import (
     get_inference_transcript,
     get_original_text,
 )
+
+sys.path.append(os.path.abspath("src"))
+
 
 logging.basicConfig(filename="./pipeline.log", level=logging.INFO)
 
@@ -85,6 +91,8 @@ def post_process_audio_transcript_pairs(audio_data_info):
         inference_transcript += f"{audio_seg_inference_transcript}\n"
     validation_original_text = get_original_text(reference_transcript)
     validation_inference_transcript = get_inference_transcript(inference_transcript)
+    logging.info(f"Validation Original Text: {validation_original_text}")
+    logging.info(f"Validation Inference Text: {validation_inference_transcript}")
     if not is_valid_transcript(
         validation_inference_transcript, validation_original_text
     ):
@@ -100,18 +108,23 @@ def post_process_audio_transcript_pairs(audio_data_info):
     ):
         seg_inference_text = inference_transcripts[seg_walker]
         seg_reference_text = reference_transcripts[seg_walker]
+        logging.info("seg_inference_text: ", seg_inference_text)
+        logging.info("seg_reference_text: ", seg_reference_text)
         if not is_valid_transcript(seg_inference_text, seg_reference_text):
+            logging.info("Segment Transcript is invalid")
             seg_LLM_corrected_text = get_LLM_corrected_text(seg_inference_text, False)
         else:
+            logging.info("Segment Transcript is valid")
             seg_LLM_corrected_text = get_LLM_corrected_text(
                 seg_inference_text, True, seg_reference_text
             )
-        post_process_audio_transcript_pairs[audio_seg_id] = {
+        post_processed_audio_transcript_pairs[audio_seg_id] = {
             "audio_seg_data": audio_seg_data,
             "inference_transcript": seg_inference_text,
             "reference_transcript": seg_reference_text,
             "LLM_corrected_text": seg_LLM_corrected_text,
         }
+        logging.info(f"LLM Corrected Text: {seg_LLM_corrected_text}")
     return post_processed_audio_transcript_pairs, full_audio_id
 
 
@@ -170,12 +183,15 @@ def upload_to_s3(bucket_name, file_name, audio_segment):
 def save_post_processed_audio_transcript_pairs(
     post_processed_audio_transcript_pairs, audio_data_info
 ):
-    output_file = "processed_audio_transcript.csv"
+    os.makedirs("data/corrected_inference", exist_ok=True)
+    output_file = "data/corrected_inference/processed_audio_transcript.csv"
     # Define Csv column headers
     headers = [
         "file_name",
         "audio_url",
         "inference_transcript",
+        "reference_transcript",
+        "LLM_corrected_text",
         "audio_duration",
         "speaker_name",
         "speaker_gender",
@@ -191,9 +207,10 @@ def save_post_processed_audio_transcript_pairs(
     s3_bucket_name = "monlam.ai.stt"
 
     try:
-        with open(output_file, "w", newline="", encoding="utf-8") as file:
+        with open(output_file, "a", newline="", encoding="utf-8") as file:
             writer = csv.DictWriter(file, fieldnames=headers)
-            writer.writeheader()
+            if file.tell() == 0:
+                writer.writeheader()
             for (
                 audio_seg_id,
                 audio_seg_data,
@@ -210,9 +227,11 @@ def save_post_processed_audio_transcript_pairs(
                 # Write a row to the CSV file
                 writer.writerow(
                     {
-                        "filename": audio_seg_id,
+                        "file_name": audio_seg_id,
                         "audio_url": audio_url,
                         "inference_transcript": audio_seg_data["inference_transcript"],
+                        "reference_transcript": audio_seg_data["reference_transcript"],
+                        "LLM_corrected_text": audio_seg_data["LLM_corrected_text"],
                         "audio_duration": audio_duration,
                         "speaker_name": speaker_name,
                         "speaker_gender": speaker_gender,
@@ -228,23 +247,51 @@ def save_post_processed_audio_transcript_pairs(
 def get_audio_transcript_pairs(
     audio_transcription_catalog_url, start_sr_no=None, end_sr_no=None
 ):
+    os.makedirs("data/corrected_audio_transcript_checkpoint", exist_ok=True)
+    # Load checkpoint if it exists
+    checkpoint_file = (
+        "data/corrected_audio_transcript_checkpoint/processing_checkpoint.json"
+    )
+    if os.path.exists(checkpoint_file):
+        with open(checkpoint_file) as file:
+            processed_ids = set(json.load(file))
+    else:
+        processed_ids = set()
+
     audio_transcription_datas = parse_catalog(
         audio_transcription_catalog_url, start_sr_no, end_sr_no
     )
     for data_id, audio_data_info in audio_transcription_datas.items():
-        (
-            post_processed_audio_transcript_pairs,
-            full_audio_id,
-        ) = post_process_audio_transcript_pairs(audio_data_info)
-        if post_processed_audio_transcript_pairs:
-            save_post_processed_audio_transcript_pairs(
-                post_processed_audio_transcript_pairs, audio_data_info
+        full_audio_id = audio_data_info.get("full_audio_id", "")
+        if full_audio_id in processed_ids:
+            logging.info(
+                f"Skipping already processed audio data with ID {full_audio_id}"
             )
-        else:
-            logging.info(f"Audio data with ID {full_audio_id} has invalid transcript")
+            continue
+        try:
+            (
+                post_processed_audio_transcript_pairs,
+                full_audio_id,
+            ) = post_process_audio_transcript_pairs(audio_data_info)
+            if post_processed_audio_transcript_pairs:
+                save_post_processed_audio_transcript_pairs(
+                    post_processed_audio_transcript_pairs, audio_data_info
+                )
+                processed_ids.add(full_audio_id)
+                # save the checkpoint after each successful processing
+                with open(checkpoint_file, "w") as file:
+                    json.dump(list(processed_ids), file)
+            else:
+                logging.info(
+                    f"Audio data with ID {full_audio_id} has invalid transcript"
+                )
+        except Exception as e:
+            logging.error(f"Error processing audio data with ID {full_audio_id}: {e}")
+
+    logging.info("Processing completed")
 
 
 if __name__ == "__main__":
     # Replace with your actual spreadsheet ID
     google_spread_sheet_id = "1Iy01o2hsrhWpbOQzFfC1gOVqw4j1AMp7poEU2eu7WN0"
-    get_audio_transcript_pairs(google_spread_sheet_id, 1, 20)
+    get_audio_transcript_pairs(google_spread_sheet_id, 2, 2)

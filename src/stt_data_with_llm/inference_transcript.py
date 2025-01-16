@@ -19,35 +19,6 @@ INFERENCE_HEADERS = {
     "Content-Type": "audio/wav",
 }
 
-'''
-def convert_raw_to_wav_in_memory(raw_audio, sample_rate, channels, sample_width):
-    """
-    Converts raw audio data to a valid WAV format in memory.
-
-    Args:
-        raw_audio (bytes): Raw audio data.
-        sample_rate (int): Audio sample rate.
-        channels (int): Number of audio channels.
-        sample_width (int): Number of bytes per sample.
-
-    Returns:
-        BytesIO: In-memory WAV file if conversion is successful, None otherwise.
-    """
-    try:
-        wav_buffer = BytesIO()
-        with wave.open(wav_buffer, "wb") as wav_file:
-            wav_file.setnchannels(channels)
-            wav_file.setsampwidth(sample_width)
-            wav_file.setframerate(sample_rate)
-            wav_file.writeframes(raw_audio)
-        wav_buffer.seek(0)  # Reset buffer to the beginning
-        logging.info("Raw audio successfully converted to WAV format in memory.")
-        return wav_buffer
-    except Exception as e:
-        logging.error(f"Error converting raw audio to WAV in memory: {e}")
-        return None
-'''
-
 
 def query_audio_api(wav_buffer):
     """
