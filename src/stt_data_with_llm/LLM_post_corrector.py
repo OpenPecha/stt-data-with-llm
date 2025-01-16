@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from stt_data_with_llm.util import setup_logging
 
 load_dotenv()
-setup_logging("llm_corrector_log.log")
+setup_logging("llm_corrector.log")
 
 
 def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
@@ -25,23 +25,23 @@ def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
     client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     if is_valid and reference_text is not None:
-        prompt = (
-            "I have two sentences: a colloquial sentence and a reference sentence. "
-            "Your task is to EXACTLY match the spellings from the reference sentence. "
-            "Do not make any corrections beyond matching the reference sentence exactly, even if you think a word is misspelled. "  # noqa
-            "If a word appears the same way in both sentences, do not change it. "
-            f"Colloquial sentence: {inference_text} "
-            f"Reference sentence: {reference_text} "
-            "Give me only the corrected sentence that exactly matches the reference, without any explanation"
-        )
+        prompt = f"""
+            I have two sentences: a colloquial sentence and a reference sentence.
+            Your task is to EXACTLY match the spellings from the reference sentence.
+            Do not make any corrections beyond matching the reference sentence exactly, even if you think a word is misspelled.   # noqa
+            If a word appears the same way in both sentences, do not change it.
+            Colloquial sentence: {inference_text}
+            Reference sentence: {reference_text}
+            Give me only the corrected sentence that exactly matches the reference, without any explanation
+            """
     else:
-        prompt = (
-            "I have a colloquial sentence that may contain spelling mistakes. "
-            "Please correct any spelling mistakes while preserving the meaning and colloquial nature of the text. "
-            "Only fix spelling errors - do not change the style, word choice, or grammar. "
-            f"Sentence: {inference_text} "
-            "Give me only the corrected sentence without any explanation"
-        )
+        prompt = f"""
+            You are a Tibetan Language Expert. I want you to look for any spelling and grammar mistakes in the following Tibetan
+            sentence. Make sure that you don't change the terms and sentence if its not grammatically incorrect.
+            Tibetan sentence: {inference_text}
+            Output: output should be only the corrected sentence.
+            Give me only the corrected sentence without any explanation
+            """
 
     try:
         # Make API call to Claude

@@ -11,7 +11,7 @@ cer_metric = load("cer")
 
 # Configure logging
 def setup_logging(filename):
-    """This function sets up a logger with both file and console handlers.
+    """This function sets up a logger with file handlers.
 
     Args:
         filename (str): The name of the log file to be created or appended to.
@@ -30,11 +30,6 @@ def setup_logging(filename):
     )
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
-
-    # Create a console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
 
 
 def calculate_cer(reference, prediction):
