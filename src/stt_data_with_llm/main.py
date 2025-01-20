@@ -279,9 +279,3 @@ def get_audio_transcript_pairs(
             logging.error(f"Error processing audio data with ID {full_audio_id}: {e}")
 
     logging.info("Processing completed")
-
-
-if __name__ == "__main__":
-    # Replace with your actual spreadsheet ID
-    google_spread_sheet_id = "1Iy01o2hsrhWpbOQzFfC1gOVqw4j1AMp7poEU2eu7WN0"
-    get_audio_transcript_pairs(google_spread_sheet_id, 2, 2)
