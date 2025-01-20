@@ -15,14 +15,12 @@ from stt_data_with_llm.config import (
     AUDIO_SEG_UPPER_LIMIT,
     HYPER_PARAMETERS,
 )
-from stt_data_with_llm.util import setup_logging
 
 # load the evnironment variable
 load_dotenv()
 
 USE_AUTH_TOKEN = os.getenv("use_auth_token")
 # Call the setup_logging function at the beginning of your script
-setup_logging("audio_parser.log")
 
 
 def sec_to_millis(seconds):
@@ -84,24 +82,6 @@ def initialize_vad_pipeline():
     vad_pipeline.instantiate(HYPER_PARAMETERS)
     logging.info("VAD pipeline initialized successfully.")
     return vad_pipeline
-
-
-def save_segment(segment, folder, prefix, id, start_ms, end_ms):
-    """Saves an audio segment to WAV file with standardized naming.
-
-    Args:
-        segment (AudioSegment): Audio segment to save
-        folder (str): Output directory path
-        prefix (str): Filename prefix
-        id (int): Segment Identifier
-        start_ms (float): Segment start time in milliseconds
-        end_ms (float): Segment end time in milliseconds
-    """
-    segment.export(
-        f"{folder}/{prefix}_{id:04}_{int(start_ms)}_to_{int(end_ms)}.wav",  # noqa: E231
-        format="wav",
-        parameters=["-ac", "1", "-ar", "16000"],
-    )
 
 
 def convert_to_16K(audio_data):
@@ -167,7 +147,6 @@ def chop_long_segment_duration(
     sampling_rate,
     full_audio_id,
     split_audio,
-    output_folder,
     counter,
 ):
     """Splits an audio segment into smaller chunks if its duration exceeds the specified upper limit.
@@ -192,35 +171,21 @@ def chop_long_segment_duration(
     while chop_length > upper_limit:
         chop_length = chop_length / 2
     for chop_index in range(int(segment_split_duration / chop_length)):
-        segment_split_chop = original_audio_segment[
-            sec_to_millis(
-                vad_span.start
-                + frame_to_sec(split_start, sampling_rate)
-                + chop_length * chop_index
-            ) : sec_to_millis(  # noqa: E203
-                vad_span.start
-                + frame_to_sec(split_start, sampling_rate)
-                + chop_length * (chop_index + 1)
-            )
-        ]
-        segment_key = f"{full_audio_id}_{counter:04}"  # noqa: E231
-        split_audio[segment_key] = segment_split_chop.raw_data
-        save_segment(
-            segment=segment_split_chop,
-            folder=output_folder,
-            prefix=full_audio_id,
-            id=counter,
-            start_ms=sec_to_millis(
-                vad_span.start
-                + frame_to_sec(split_start, sampling_rate)
-                + chop_length * chop_index
-            ),
-            end_ms=sec_to_millis(
-                vad_span.start
-                + frame_to_sec(split_start, sampling_rate)
-                + chop_length * (chop_index + 1)
-            ),
+        start_ms = sec_to_millis(
+            vad_span.start
+            + frame_to_sec(split_start, sampling_rate)
+            + chop_length * chop_index
         )
+        end_ms = sec_to_millis(  # noqa: E203
+            vad_span.start
+            + frame_to_sec(split_start, sampling_rate)
+            + chop_length * (chop_index + 1)
+        )
+        segment_split_chop = original_audio_segment[start_ms:end_ms]
+        segment_key = (
+            f"{full_audio_id}_{counter:04}_{int(start_ms)}_to_{int(end_ms)}"  # noqa
+        )
+        split_audio[segment_key] = segment_split_chop
         counter += 1
     return counter
 
@@ -233,7 +198,6 @@ def process_non_mute_segments(
     lower_limit,
     upper_limit,
     full_audio_id,
-    output_folder,
     counter,
     split_audio,
 ):
@@ -255,31 +219,19 @@ def process_non_mute_segments(
         int: The updated counter after processing the non-mute segments.
     """  # noqa: E501
     for split_start, split_end in non_mute_segment_splits:
-        segment_split = original_audio_segment[
-            sec_to_millis(
-                vad_span.start + frame_to_sec(split_start, sampling_rate)
-            ) : sec_to_millis(  # noqa: E203
-                vad_span.start + frame_to_sec(split_end, sampling_rate)
-            )
-        ]
+        start_ms = sec_to_millis(
+            vad_span.start + frame_to_sec(split_start, sampling_rate)
+        )
+        end_ms = sec_to_millis(  # noqa: E203
+            vad_span.start + frame_to_sec(split_end, sampling_rate)
+        )
+        segment_split = original_audio_segment[start_ms:end_ms]
         segment_split_duration = (
             vad_span.start + frame_to_sec(split_end, sampling_rate)
         ) - (vad_span.start + frame_to_sec(split_start, sampling_rate))
         if lower_limit <= segment_split_duration <= upper_limit:
-            segment_key = f"{full_audio_id}_{counter:04}"  # noqa: E231
-            split_audio[segment_key] = segment_split.raw_data
-            save_segment(
-                segment=segment_split,
-                folder=output_folder,
-                prefix=full_audio_id,
-                id=counter,
-                start_ms=sec_to_millis(
-                    vad_span.start + frame_to_sec(split_start, sampling_rate)
-                ),
-                end_ms=sec_to_millis(
-                    vad_span.start + frame_to_sec(split_end, sampling_rate)
-                ),
-            )
+            segment_key = f"{full_audio_id}_{counter:04}_{int(start_ms)}_to_{int(end_ms)}"  # noqa: E231
+            split_audio[segment_key] = segment_split
             counter += 1
         elif segment_split_duration > upper_limit:
             counter = chop_long_segment_duration(
@@ -291,7 +243,6 @@ def process_non_mute_segments(
                 sampling_rate,
                 full_audio_id,
                 split_audio,
-                output_folder,
                 counter,
             )
     return counter
@@ -321,10 +272,6 @@ def get_split_audio(
     with open(temp_audio_file, "wb") as f:
         f.write(audio_data)
 
-    output_folder = f"data/split_audio/{full_audio_id}"
-
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
     # initialize vad pipeline
     pipeline = initialize_vad_pipeline()
     vad = pipeline(temp_audio_file)
@@ -335,21 +282,13 @@ def get_split_audio(
 
     counter = 1
     for vad_span in vad.get_timeline().support():
-        vad_segment = original_audio_segment[
-            sec_to_millis(vad_span.start) : sec_to_millis(vad_span.end)  # noqa: E203
-        ]
+        start_ms = sec_to_millis(vad_span.start)
+        end_ms = sec_to_millis(vad_span.end)
+        vad_segment = original_audio_segment[start_ms:end_ms]
         vad_span_length = vad_span.end - vad_span.start
         if lower_limit <= vad_span_length <= upper_limit:
-            segment_key = f"{full_audio_id}_{counter:04}"  # noqa: E231
-            split_audio[segment_key] = vad_segment.raw_data
-            save_segment(
-                segment=vad_segment,
-                folder=output_folder,
-                prefix=full_audio_id,
-                id=counter,
-                start_ms=sec_to_millis(vad_span.start),
-                end_ms=sec_to_millis(vad_span.end),
-            )
+            segment_key = f"{full_audio_id}_{counter:04}_{int(start_ms)}_to_{int(end_ms)}"  # noqa: E231
+            split_audio[segment_key] = vad_segment
             counter += 1
         elif vad_span_length > upper_limit:
             non_mute_segment_splits = librosa.effects.split(
@@ -370,7 +309,6 @@ def get_split_audio(
                 lower_limit,
                 upper_limit,
                 full_audio_id,
-                output_folder,
                 counter,
                 split_audio,
             )
