@@ -82,7 +82,7 @@ class TestGetSplitAudio(TestCase):
             )
             num_split = len(split_audio_data)
             num_of_seg_in_audios[seg_id] = num_split
-        expected_num_of_seg_in_audios = "tests/data/expected_audio_data.json"
+        expected_num_of_seg_in_audios = "tests/test_data/expected_audio_data.json"
         with open(expected_num_of_seg_in_audios, encoding="utf-8") as file:
             expected_num_split = json.load(file)
         assert num_of_seg_in_audios == expected_num_split

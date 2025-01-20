@@ -15,7 +15,7 @@ def test_catalog_parser():
     # Parse the catalog
 
     audio_transcription_catalog = parse_catalog(google_spread_sheet_id, 1, 20)
-    expected_output_json_path = "tests/data/expected_catalog_data.json"
+    expected_output_json_path = "tests/test_data/expected_catalog_data.json"
     with open(expected_output_json_path, encoding="utf-8") as file:
         expected_output = json.load(file)
     assert audio_transcription_catalog == expected_output
