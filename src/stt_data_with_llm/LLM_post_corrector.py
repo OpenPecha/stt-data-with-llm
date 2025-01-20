@@ -115,11 +115,3 @@ def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
         # Log error and return None if API call fails
         logging.error(f"Error in LLM correction: {str(e)}")
         return None
-
-
-if __name__ == "__main__":
-    inference_text = "མགོ་ལོག་ཁུལ་འབྲིང་རིམ་མི་མང་ཁྲིམས་ཁང་གིས་"
-    reference_text = (
-        "དེ་བཞིན་གནས་ཚུལ་གཞན་ཁག་ཏུ་མགོ་ལོག་ཁུལ་འབྲིང་རིམ་མི་དམངས་ཁྲིམས་ཁང་གིས། དབྱར་"
-    )
-    get_LLM_corrected_text(inference_text, True, reference_text)
