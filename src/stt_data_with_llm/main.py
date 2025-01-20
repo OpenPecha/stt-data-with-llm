@@ -3,7 +3,6 @@ import io
 import json
 import logging
 import os
-import sys
 
 import boto3
 from fast_antx.core import transfer
@@ -21,12 +20,10 @@ from stt_data_with_llm.util import (
     calculate_cer,
     get_inference_transcript,
     get_original_text,
+    setup_logging,
 )
 
-sys.path.append(os.path.abspath("src"))
-
-
-logging.basicConfig(filename="./pipeline.log", level=logging.INFO)
+setup_logging("stt_llm_corrector.log")
 
 
 def transfer_segmentation(inference_transcript, reference_transcript):
@@ -91,8 +88,6 @@ def post_process_audio_transcript_pairs(audio_data_info):
         inference_transcript += f"{audio_seg_inference_transcript}\n"
     validation_original_text = get_original_text(reference_transcript)
     validation_inference_transcript = get_inference_transcript(inference_transcript)
-    logging.info(f"Validation Original Text: {validation_original_text}")
-    logging.info(f"Validation Inference Text: {validation_inference_transcript}")
     if not is_valid_transcript(
         validation_inference_transcript, validation_original_text
     ):
@@ -108,13 +103,9 @@ def post_process_audio_transcript_pairs(audio_data_info):
     ):
         seg_inference_text = inference_transcripts[seg_walker]
         seg_reference_text = reference_transcripts[seg_walker]
-        logging.info("seg_inference_text: ", seg_inference_text)
-        logging.info("seg_reference_text: ", seg_reference_text)
         if not is_valid_transcript(seg_inference_text, seg_reference_text):
-            logging.info("Segment Transcript is invalid")
             seg_LLM_corrected_text = get_LLM_corrected_text(seg_inference_text, False)
         else:
-            logging.info("Segment Transcript is valid")
             seg_LLM_corrected_text = get_LLM_corrected_text(
                 seg_inference_text, True, seg_reference_text
             )
@@ -124,7 +115,6 @@ def post_process_audio_transcript_pairs(audio_data_info):
             "reference_transcript": seg_reference_text,
             "LLM_corrected_text": seg_LLM_corrected_text,
         }
-        logging.info(f"LLM Corrected Text: {seg_LLM_corrected_text}")
     return post_processed_audio_transcript_pairs, full_audio_id
 
 

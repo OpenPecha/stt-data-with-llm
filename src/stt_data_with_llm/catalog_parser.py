@@ -2,10 +2,7 @@ import logging
 
 import pandas as pd
 
-from stt_data_with_llm.util import setup_logging
-
 # Call the setup_logging function at the beginning of your script
-setup_logging("catalog_parse.log")
 
 
 def read_spreadsheet(sheet_id):

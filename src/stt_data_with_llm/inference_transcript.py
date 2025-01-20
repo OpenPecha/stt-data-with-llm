@@ -6,12 +6,10 @@ import requests
 from dotenv import load_dotenv
 
 from stt_data_with_llm.config import API_URL
-from stt_data_with_llm.util import setup_logging
 
 load_dotenv()
 TOKEN_ID = os.getenv("token_id")
 # Call the setup_logging function at the beginning of your script
-setup_logging("inference_log.log")
 
 INFERENCE_HEADERS = {
     "Accept": "application/json",
