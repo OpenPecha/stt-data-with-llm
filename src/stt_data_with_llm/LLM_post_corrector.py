@@ -60,7 +60,7 @@ def get_LLM_corrected_text(inference_text, is_valid, reference_text=None):
             Format:
             Colloquial: {inference_text}
             Reference: {reference_text}
-
+            Output: Return only the corrected sentence without any explanation or additional
             Note:
             - Output ONLY the corrected sentence with no additional text or explanations
             - If you notice spelling mistakes in the Reference sentence, rely on standard Tibetan orthography rather than the Reference sentence

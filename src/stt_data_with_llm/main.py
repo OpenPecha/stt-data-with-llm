@@ -91,6 +91,8 @@ def post_process_audio_transcript_pairs(audio_data_info):
     if not is_valid_transcript(
         validation_inference_transcript, validation_original_text
     ):
+        logging.info("Validation_original_transcript: %s", validation_original_text)
+        logging.info("Validation_inference_text: %s", validation_inference_transcript)
         return None, full_audio_id
     reference_transcript_with_inference_segmentation = transfer_segmentation(
         inference_transcript, reference_transcript
@@ -279,3 +281,9 @@ def get_audio_transcript_pairs(
             logging.error(f"Error processing audio data with ID {full_audio_id}: {e}")
 
     logging.info("Processing completed")
+
+
+if __name__ == "__main__":
+    # Replace with your actual spreadsheet ID
+    google_spread_sheet_id = "1Iy01o2hsrhWpbOQzFfC1gOVqw4j1AMp7poEU2eu7WN0"
+    get_audio_transcript_pairs(google_spread_sheet_id)
