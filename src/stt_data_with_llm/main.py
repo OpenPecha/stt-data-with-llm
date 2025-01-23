@@ -240,24 +240,33 @@ def get_audio_transcript_pairs(
     audio_transcription_catalog_url, start_sr_no=None, end_sr_no=None
 ):
     os.makedirs("data/corrected_audio_transcript_checkpoint", exist_ok=True)
+    os.makedirs("data/invalid_transcript_checkpoint", exist_ok=True)
     # Load checkpoint if it exists
     checkpoint_file = (
         "data/corrected_audio_transcript_checkpoint/processing_checkpoint.json"
+    )
+    invalid_transcript_checkpoint_file = (
+        "data/invalid_transcript_checkpoint/invalid_transcript_checkpoint.json"
     )
     if os.path.exists(checkpoint_file):
         with open(checkpoint_file) as file:
             processed_ids = set(json.load(file))
     else:
         processed_ids = set()
+    if os.path.exists(invalid_transcript_checkpoint_file):
+        with open(invalid_transcript_checkpoint_file) as invalid_file:
+            invalid_transcript_ids = set(json.load(invalid_file))
+    else:
+        invalid_transcript_ids = set()
 
     audio_transcription_datas = parse_catalog(
         audio_transcription_catalog_url, start_sr_no, end_sr_no
     )
     for data_id, audio_data_info in audio_transcription_datas.items():
         full_audio_id = audio_data_info.get("full_audio_id", "")
-        if full_audio_id in processed_ids:
+        if full_audio_id in processed_ids or full_audio_id in invalid_transcript_ids:
             logging.info(
-                f"Skipping already processed audio data with ID {full_audio_id}"
+                f"Skipping already processed or invalid audio data with ID {full_audio_id}"
             )
             continue
         try:
@@ -277,6 +286,10 @@ def get_audio_transcript_pairs(
                 logging.info(
                     f"Audio data with ID {full_audio_id} has invalid transcript"
                 )
+                invalid_transcript_ids.add(full_audio_id)
+                # save the checkpoint after each successful processing
+                with open(invalid_transcript_checkpoint_file, "w") as file:
+                    json.dump(list(invalid_transcript_ids), file)
         except Exception as e:
             logging.error(f"Error processing audio data with ID {full_audio_id}: {e}")
 
